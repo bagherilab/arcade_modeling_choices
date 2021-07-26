@@ -26,5 +26,5 @@ class NUTRIENT_DYNAMICS():
 
                     print(f"{name} : {code}")
 
-                    loaded = load(infile)
-                    func(*loaded, outfile, code, exclude=exclude, timepoints=timepoints, seeds=seeds)
+                    loaded = load(infile, exclude)
+                    func(*loaded, outfile, code, timepoints=timepoints, seeds=seeds)
