@@ -1,7 +1,22 @@
 import numpy as np
+from functools import reduce
 from .utilities import *
 
 # ANALYSIS UTILITY FUNCTIONS ===================================================
+
+
+def convert_coordinates(c):
+    """Convert coordinates to rectangular."""
+    if len(c) == 4:
+        R = 34
+        offx = R - 1
+        offy = 2*R - 2
+        u, v, w, z = c
+        x = u + R - 1 - offx
+        y = (w - v) + 2*R - 2 - offy
+        return [x, y, z]
+    else:
+        return list(c)
 
 def calculate_statistics(data):
     """Calculate statistics for data."""
@@ -22,6 +37,14 @@ def calculate_nan_statistics(data):
         "min": [np.min(d) if d else np.nan for d in unnan],
         "std": [np.std(d, ddof=1) if d else np.nan for d in unnan]
     }
+
+def add_coordinates(D, t):
+    """Adds column to dataframe with coordinates as tuple."""
+    d = D[D.t == t].copy()
+    coords = d[d.columns.intersection(["u", "v", "w", "x", "y", "z"])].to_records(index=False)
+    coords = [tuple(c) for c in coords]
+    d["c"] = coords
+    return d
 
 # GENERAL METRICS ==============================================================
 
@@ -151,6 +174,34 @@ def get_temporal_activity(D, T, N):
 
     return activity
 
+# SPATIAL METRICS ==============================================================
+
+def get_spatial_counts(D):
+    """Get cell counts by coordinate."""
+    counts = D.groupby("c")["i"].count()
+    return counts
+
+def get_spatial_volumes(D):
+    """Get cell volumes by coordinate."""
+    volumes = D.groupby("c")["volume"].sum()
+    return volumes
+
+def get_spatial_states(D):
+    """Get cell states by coordinate."""
+    state_columns = [f"STATE_{state}" for state in range(7)]
+
+    # Create dummy columns for each state.
+    d = pd.get_dummies(D.state, prefix='STATE')
+    D = pd.concat([D, d], axis=1)
+
+    # Add missing columns.
+    for col in state_columns:
+        if col not in D.columns:
+            D[col] = 0
+
+    states = D.groupby("c").sum()
+    return states[state_columns]
+
 # GENERAL ANALYSIS =============================================================
 
 def analyze_metrics(D, T, N, outfile, code, timepoints=[], seeds=[]):
@@ -212,6 +263,24 @@ def analyze_seeds(D, T, N, outfile, code, timepoints=[], seeds=[]):
 
     activity = get_temporal_activity(D, timepoints, N)
     _analyze_seeds(activity, timepoints, f"{outfile}{code}", ".SEEDS.ACTIVITY")
+
+def analyze_locations(D, T, N, outfile, code, timepoints=[], seeds=[]):
+    """Analyze results for metrics per location."""
+
+    for t in timepoints:
+        d = add_coordinates(D, t)
+        counts = get_spatial_counts(d)
+        volumes = get_spatial_volumes(d)
+        states = get_spatial_states(d)
+
+        merged = reduce(lambda left, right: pd.merge(left, right, on='c'), [counts, volumes, states])
+        merged = merged/len(N)
+
+        out = [list(r) for r in merged.to_records()]
+        out = [convert_coordinates(row[0]) + row[1:] for row in out]
+
+        header = "x,y,z,COUNT,VOLUME," + ",".join([f"STATE_{state}" for state in range(7)]) + "\n"
+        save_csv(f"{outfile}{code}", header, list(zip(*out)), f".LOCATIONS.{format_time(t)}")
 
 # ------------------------------------------------------------------------------
 
