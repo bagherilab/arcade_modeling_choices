@@ -171,8 +171,9 @@ def analyze_metrics(D, T, N, outfile, code, timepoints=[], seeds=[]):
     cycles = get_temporal_cycles(D, T, N)
     _analyze_metrics_nan(cycles, T, f"{outfile}{code}", ".METRICS.CYCLES")
 
-    growth = get_temporal_growths(D, T[4:], N)
-    nan_growth = [np.nan] * 6
+    index = T.index(2.0)
+    growth = get_temporal_growths(D, T[index:], N)
+    nan_growth = [np.nan] * (index + 2)
     _analyze_metrics_nan([nan_growth + grow for grow in growth], T, f"{outfile}{code}", ".METRICS.GROWTH")
 
     symmetry = get_temporal_symmetries(D, T, N)
@@ -199,8 +200,9 @@ def analyze_seeds(D, T, N, outfile, code, timepoints=[], seeds=[]):
     cycles = get_temporal_cycles(D, timepoints, N)
     _analyze_seeds(cycles, timepoints, f"{outfile}{code}", ".SEEDS.CYCLES")
 
-    growth = get_temporal_growths(D, T[4:], N)
-    growth = [[np.nan] * 6 + grow for grow in growth]
+    index = T.index(2.0)
+    growth = get_temporal_growths(D, T[index:], N)
+    growth = [[np.nan] * (index + 2) + grow for grow in growth]
     indices = [T.index(t) for t in timepoints]
     growth = np.array(growth)[:,indices]
     _analyze_seeds(growth, timepoints, outfile + code, ".SEEDS.GROWTH")
