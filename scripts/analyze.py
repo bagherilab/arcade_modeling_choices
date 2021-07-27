@@ -162,14 +162,14 @@ def analyze_metrics(D, T, N, outfile, code, timepoints=[], seeds=[]):
     volumes = get_temporal_volumes(D, T, N)
     _analyze_metrics(volumes, T, f"{outfile}{code}", ".METRICS.VOLUMES")
 
-    cycles = get_temporal_cycles(D, T, N)
-    _analyze_metrics_nan(cycles, T, f"{outfile}{code}", ".METRICS.CYCLES")
-
     diameters = get_temporal_diameters(D, T, N)
     _analyze_metrics(diameters, T, f"{outfile}{code}", ".METRICS.DIAMETERS")
 
     states = get_temporal_states(D, T, N)
     _analyze_metrics_list(states, T, f"{outfile}{code}", ".METRICS.STATES")
+
+    cycles = get_temporal_cycles(D, T, N)
+    _analyze_metrics_nan(cycles, T, f"{outfile}{code}", ".METRICS.CYCLES")
 
     growth = get_temporal_growths(D, T[4:], N)
     nan_growth = [np.nan] * 6
@@ -180,6 +180,36 @@ def analyze_metrics(D, T, N, outfile, code, timepoints=[], seeds=[]):
 
     activity = get_temporal_activity(D, T, N)
     _analyze_metrics_nan(activity, T, f"{outfile}{code}", ".METRICS.ACTIVITY")
+
+def analyze_seeds(D, T, N, outfile, code, timepoints=[], seeds=[]):
+    """Analyze results for metrics grouped by seed."""
+
+    counts = get_temporal_counts(D, timepoints, N)
+    _analyze_seeds(counts, timepoints, f"{outfile}{code}", ".SEEDS.COUNTS")
+
+    volumes = get_temporal_volumes(D, timepoints, N)
+    _analyze_seeds(volumes, timepoints, f"{outfile}{code}", ".SEEDS.VOLUMES")
+
+    diameters = get_temporal_diameters(D, timepoints, N)
+    _analyze_seeds(diameters, timepoints, f"{outfile}{code}", ".SEEDS.DIAMETERS")
+
+    states = get_temporal_states(D, timepoints, N)
+    _analyze_seeds_list(states, timepoints, f"{outfile}{code}", ".SEEDS.STATES")
+
+    cycles = get_temporal_cycles(D, timepoints, N)
+    _analyze_seeds(cycles, timepoints, f"{outfile}{code}", ".SEEDS.CYCLES")
+
+    growth = get_temporal_growths(D, T[4:], N)
+    growth = [[np.nan] * 6 + grow for grow in growth]
+    indices = [T.index(t) for t in timepoints]
+    growth = np.array(growth)[:,indices]
+    _analyze_seeds(growth, timepoints, outfile + code, ".SEEDS.GROWTH")
+
+    symmetry = get_temporal_symmetries(D, timepoints, N)
+    _analyze_seeds(symmetry, timepoints, f"{outfile}{code}", ".SEEDS.SYMMETRY")
+
+    activity = get_temporal_activity(D, timepoints, N)
+    _analyze_seeds(activity, timepoints, f"{outfile}{code}", ".SEEDS.ACTIVITY")
 
 # ------------------------------------------------------------------------------
 
@@ -192,14 +222,21 @@ def _analyze_metrics(data, T, filename, extension):
 def _analyze_metrics_list(data, T, filename, extension):
     """Save analysis from metrics analysis for lists."""
     out = [calculate_statistics(d) for d in data]
-    _out = {
-        "data": out,
-        "_X": T
-    }
+    _out = { "data": out, "_X": T }
     save_json(filename, _out, extension)
 
 def _analyze_metrics_nan(data, T, filename, extension):
     """Save analysis from metrics analysis excluding nans."""
     out = calculate_nan_statistics(data)
     out['_X'] = T
+    save_json(filename, out, extension)
+
+def _analyze_seeds(data, T, filename, extension):
+    """Save analysis from seeds analysis."""
+    out = [{ "_": [x[i] for x in data], "time": t } for i, t in enumerate(T)]
+    save_json(filename, out, extension)
+
+def _analyze_seeds_list(data, T, filename, extension):
+    """Save analysis from seeds analysis for lists."""
+    out = [[{ "_": [x[i] for x in d], "time": t } for i, t in enumerate(T)] for d in data]
     save_json(filename, out, extension)
