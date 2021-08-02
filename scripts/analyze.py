@@ -4,6 +4,13 @@ from .utilities import *
 
 # ANALYSIS UTILITY FUNCTIONS ===================================================
 
+def get_hex_rings(R):
+    """Gets ring size for each hexagonal radius."""
+    return [1] + [6*i for i in range(1, R)]
+
+def get_rect_rings(R):
+    """Gets ring size for each rectangular radius."""
+    return [1] + [8*i for i in range(1, R)]
 
 def convert_coordinates(c):
     """Convert coordinates to rectangular."""
@@ -281,6 +288,52 @@ def analyze_locations(D, T, N, outfile, code, timepoints=[], seeds=[]):
 
         header = "x,y,z,COUNT,VOLUME," + ",".join([f"STATE_{state}" for state in range(7)]) + "\n"
         save_csv(f"{outfile}{code}", header, list(zip(*out)), f".LOCATIONS.{format_time(t)}")
+
+def analyze_distribution(D, T, N, outfile, code, timepoints=[], seeds=[]):
+    """Analyze results for cell state distributions."""
+
+    # Create dummy columns for each state.
+    state_columns = [f"STATE_{state}" for state in range(7)]
+    d = pd.get_dummies(D.state, prefix='STATE')
+    D = pd.concat([D, d], axis=1)
+
+    for col in state_columns:
+        if col not in d.columns:
+            D[col] = 0
+
+    # Add radius column.
+    if {'u', 'v', 'w'}.issubset(D.columns):
+        D["r"] = (abs(D.u) + abs(D.v) + abs(D.w))/2.0
+        D["r"] = D["r"].astype("int16")
+        rings = get_hex_rings(D["r"].max() + 1)
+    elif {"x", "y"}.issubset(D.columns):
+        D["r"] = np.max(abs(D[["x", "y"]]), axis=1)
+        D["r"] = D["r"].astype("int16")
+        rings = get_rect_rings(D["r"].max() + 1)
+    else:
+        return
+
+    out = []
+    for z, z_group in D.groupby("z"):
+        for t, t_group in z_group.groupby("t"):
+            for r, r_group in t_group.groupby("r"):
+                values = r_group.groupby("i").sum()[state_columns].to_numpy()
+
+                # Pad with zeros for missing seeds.
+                if values.shape[0] < len(N):
+                    values = np.pad(values, ((0, len(N) - values.shape[0]), (0, 0)))
+
+                values = values / rings[r]
+                avg = list(values.mean(axis=0))
+                std = list(values.std(axis=0, ddof=1))
+                max = list(values.max(axis=0))
+                min = list(values.min(axis=0))
+
+                out.append([t, r, z] + avg + std + max + min)
+
+    metrics = ['avg', 'std', 'max', 'min']
+    header = "time,radius,height," + ",".join([f"{s}_{m}" for m in metrics for s in state_columns]) + "\n"
+    save_csv(f"{outfile}{code}", header, list(zip(*out)), f".DISTRIBUTION")
 
 # ------------------------------------------------------------------------------
 
