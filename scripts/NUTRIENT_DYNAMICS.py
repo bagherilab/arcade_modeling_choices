@@ -1,4 +1,5 @@
 from .utilities import load
+import tarfile
 
 class NUTRIENT_DYNAMICS():
     NAME = "NUTRIENT_DYNAMICS"
@@ -28,3 +29,21 @@ class NUTRIENT_DYNAMICS():
 
                     loaded = load(infile, exclude)
                     func(*loaded, outfile, code, timepoints=timepoints, seeds=seeds)
+
+    @staticmethod
+    def load(output_path, input_path, func, extension="", name=NAME,
+             contexts=CONTEXTS, levels=LEVELS, profiles=PROFILES,
+             timepoints=[], seeds=[]):
+        outfile = f"{output_path}{name}/{name}"
+
+        for context, _, exclude in contexts:
+            for level in levels:
+                for profile in profiles:
+                    code = f"_{context}_{level}_{profile}"
+                    infile = f"{input_path}{name}{extension}/{name}_{context}_{level}_{profile}{extension}.tar.xz"
+
+                    print(f"{name} : {code}")
+
+                    tar = tarfile.open(infile)
+                    key = { "context": context, "level": level, "profile": profile }
+                    func(tar, timepoints, key, outfile, code)

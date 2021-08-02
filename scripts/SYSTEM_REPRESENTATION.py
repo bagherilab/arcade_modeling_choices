@@ -1,4 +1,5 @@
 from .utilities import load
+import tarfile
 
 class SYSTEM_REPRESENTATION():
     NAME = "SYSTEM_REPRESENTATION"
@@ -28,3 +29,21 @@ class SYSTEM_REPRESENTATION():
 
                     loaded = load(infile, exclude)
                     func(*loaded, outfile, code, timepoints=timepoints, seeds=seeds)
+
+    @staticmethod
+    def load(output_path, input_path, func, extension="", name=NAME,
+             contexts=CONTEXTS, dimensions=DIMENSIONS, geometries=GEOMETRIES,
+             timepoints=[], seeds=[]):
+        outfile = f"{output_path}{name}/{name}"
+
+        for context, _, exclude in contexts:
+            for dim in dimensions:
+                for geom in geometries:
+                    code = f"_{context}_{dim}_{geom}"
+                    infile = f"{input_path}{name}{extension}/{name}_{context}_{dim}_{geom}{extension}.tar.xz"
+
+                    print(f"{name} : {code}")
+
+                    tar = tarfile.open(infile)
+                    key = { "context": context, "dimension": dim, "geometry": geom }
+                    func(tar, timepoints, key, outfile, code)

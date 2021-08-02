@@ -459,6 +459,44 @@ def analyze_outlines(D, T, N, outfile, code, timepoints=[], seeds=[]):
         header = "x,y,z,DIRECTION,WEIGHT\n"
         save_csv(f"{outfile}{code}", header, list(zip(*out)), f".OUTLINES.{format_time(t)}")
 
+def analyze_concentrations(tar, timepoints, keys, outfile, code):
+    """Analyzes concentration profiles."""
+
+    concentrations = ["glucose", "oxygen", "tgfa"]
+    seeds = 50
+    radius = 34
+    out = {}
+    arr = np.zeros((seeds, len(timepoints), radius, len(concentrations)))
+
+    for i, member in enumerate(tar.getmembers()):
+        json = load_json(member, tar=tar)
+        indices = [tp["time"] for tp in json["timepoints"]]
+
+        for t, tp in enumerate(timepoints):
+            for c, conc in enumerate(concentrations):
+                index = indices.index(tp)
+                concs = json['timepoints'][index]['molecules'][conc]
+
+                if len(concs) > 1:
+                    mid = int((len(concs) - 1)/2)
+                    cc = concs[mid]
+                    arr[i,t,:,c] = np.array(cc + [np.NaN] * (radius - len(cc)))
+                else:
+                    arr[i,t,:,c] = np.array(concs[0])
+
+    out['_X'] = [x for x in range(0,radius)]
+    out['_T'] = timepoints
+
+    for c, conc in enumerate(concentrations):
+        out[conc] = {
+            "mean": np.mean(arr[:,:,:,c], axis=0).tolist(),
+            "std": np.std(arr[:,:,:,c], axis=0, ddof=1).tolist(),
+            "min": np.min(arr[:,:,:,c], axis=0).tolist(),
+            "max": np.max(arr[:,:,:,c], axis=0).tolist()
+        }
+
+    save_json(f"{outfile}{code}", out, ".CONCENTRATIONS")
+
 # ------------------------------------------------------------------------------
 
 def _analyze_metrics(data, T, filename, extension):
