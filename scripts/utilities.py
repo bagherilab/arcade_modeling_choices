@@ -78,6 +78,10 @@ def format_json(jn):
     jn = jn.replace("],[", "],\n            [")
     return jn
 
+def format_time(time):
+    """Format time as string."""
+    return str(time).replace(".", "").zfill(3)
+
 def is_tar(file):
     """Check if file has .tar.xz extension."""
     return file[-7:] == ".tar.xz"

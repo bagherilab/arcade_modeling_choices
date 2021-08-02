@@ -132,6 +132,100 @@ def get_symmetric(coord):
         x, y = coord
         return {(x, y), (-y, x), (-x, -y), (y, -x), (x, -y), (y, x), (-x, y), (-y, -x)}
 
+def make_hex_outline(coords):
+    """Get outline of colony in hexagonal geometry."""
+    R = 34
+    offx = R - 1
+    offy = 2*R - 2
+    L = 2*R - 1
+    W = 4*R - 2
+
+    coords = np.array(coords)
+    arr = np.zeros((W, L), dtype=np.uint8)
+
+    for x, y, _ in coords:
+        arr[y + offy, x + offx] = 1
+        arr[y + offy + 1, x + offx] = 1
+
+    lines = []
+
+    # Draw left and right segments.
+    for j, row in enumerate(arr):
+        for i, col in enumerate(row):
+            if row[i] == 1:
+                if row[i - 1] == 0 or i == 0:
+                    lines.append(get_left(i, j, offx, offy))
+                if i == len(row) - 1 or row[i + 1] == 0:
+                    lines.append(get_right(i, j, offx, offy))
+
+    # Draw up and down segments.
+    tarr = np.transpose(arr)
+    for i, col in enumerate(tarr):
+        for j, row in enumerate(col):
+            if col[j] == 1:
+                if col[j - 1] == 0 or j == 0:
+                    lines.append(get_up_down(i, j, offx, offy))
+                if j == len(col) - 1 or col[j + 1] == 0:
+                    lines.append(get_up_down(i, j, offx, offy))
+
+    return pd.DataFrame(lines, columns=["x", "y", "dir"])
+
+def make_rect_outline(coords):
+    """Get outline of colony in rectangular geometry."""
+    R = 34
+    off = R - 1
+    S = 2*R - 1
+
+    coords = np.array(coords)
+    arr = np.zeros((S, S), dtype=np.uint8)
+
+    for x, y, _ in coords:
+        arr[y + off, x + off] = 1
+
+    lines = []
+
+    # Draw left and right segments.
+    for j, row in enumerate(arr):
+        for i, col in enumerate(row):
+            if row[i] == 1:
+                if row[i - 1] == 0 or i == 0:
+                    lines.append([i - off, j - off, 2])
+                if i == len(row) - 1 or row[i + 1] == 0:
+                    lines.append([i - off, j - off, 3])
+
+    # Draw up and down segments.
+    tarr = np.transpose(arr)
+    for i, col in enumerate(tarr):
+        for j, row in enumerate(col):
+            if col[j] == 1:
+                if col[j - 1] == 0 or j == 0:
+                    lines.append([i - off, j - off, 0])
+                if j == len(col) - 1 or col[j + 1] == 0:
+                    lines.append([i - off, j - off, 1])
+
+    return pd.DataFrame(lines, columns=["x", "y", "dir"])
+
+def get_up_down(i, j, offx, offy):
+    """Get up/down outline edge."""
+    case = 1 if (i + j)%2 == 0 else 0
+    x = i
+    y = j + (-1 if (i + j)%2 == 0 else 0)
+    return [x - offx, y - offy, case]
+
+def get_left(i, j, offx, offy):
+    """Get left outline edge."""
+    case = 2 if (i + j)%2 == 0 else 3
+    x = i
+    y = j + (-1 if (i + j)%2 == 0 else 0)
+    return [x - offx, y - offy, case]
+
+def get_right(i, j, offx, offy):
+    """Get right outline edge."""
+    case = 4 if (i + j)%2 == 0 else 5
+    x = i
+    y = j + (-1 if (i + j)%2 == 0 else 0)
+    return [x - offx, y - offy, case]
+
 # TEMPORAL METRICS =============================================================
 
 def get_temporal_counts(D, T, N):
@@ -208,6 +302,20 @@ def get_spatial_states(D):
 
     states = D.groupby("c").sum()
     return states[state_columns]
+
+def get_spatial_outlines(D):
+    """Get colony outline arrays."""
+    outlines = []
+    hex = {'u', 'v', 'w'}.issubset(D.columns)
+
+    for i, i_group in D.groupby("i"):
+        for z, z_group in i_group.groupby("z"):
+            coords = [convert_coordinates(c) for c in z_group.c]
+            outline = make_hex_outline(coords) if hex else make_rect_outline(coords)
+            outline['c'] = [(x, y, z) for x, y in zip(outline.x, outline.y)]
+            outlines.append(outline)
+
+    return pd.concat(outlines)
 
 # GENERAL ANALYSIS =============================================================
 
@@ -334,6 +442,22 @@ def analyze_distribution(D, T, N, outfile, code, timepoints=[], seeds=[]):
     metrics = ['avg', 'std', 'max', 'min']
     header = "time,radius,height," + ",".join([f"{s}_{m}" for m in metrics for s in state_columns]) + "\n"
     save_csv(f"{outfile}{code}", header, list(zip(*out)), f".DISTRIBUTION")
+
+def analyze_outlines(D, T, N, outfile, code, timepoints=[], seeds=[]):
+    """Analyzes results for colony outline."""
+
+    for t in timepoints:
+        d = add_coordinates(D, t)
+        outlines = get_spatial_outlines(d)
+
+        out = []
+        for dir, group in outlines.groupby("dir"):
+            counts = group.groupby("c").count()/len(N)
+            records = [list(r) for r in counts.to_records()]
+            out = out + [list(r[0]) + [dir, r[1]] for r in records]
+
+        header = "x,y,z,DIRECTION,WEIGHT\n"
+        save_csv(f"{outfile}{code}", header, list(zip(*out)), f".OUTLINES.{format_time(t)}")
 
 # ------------------------------------------------------------------------------
 
