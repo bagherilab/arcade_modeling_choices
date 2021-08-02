@@ -497,6 +497,32 @@ def analyze_concentrations(tar, timepoints, keys, outfile, code):
 
     save_json(f"{outfile}{code}", out, ".CONCENTRATIONS")
 
+def analyze_centers(tar, timepoints, keys, outfile, code):
+    """Analyze concentrations at the center of environment."""
+
+    concentrations = ["glucose", "oxygen", "tgfa"]
+    seeds = 50
+    out = {}
+    arr = np.zeros((seeds, len(concentrations)))
+
+    for i, member in enumerate(tar.getmembers()):
+        json = load_json(member, tar=tar)
+
+        for c, conc in enumerate(concentrations):
+            concs = json['timepoints'][timepoints]['molecules'][conc]
+
+            if len(concs) > 1:
+                mid = int((len(concs) - 1)/2)
+                cc = concs[mid]
+                arr[i,c] = cc[0]
+            else:
+                arr[i,c] = concs[0][0]
+
+    for c, conc in enumerate(concentrations):
+        out[conc] = arr[:,c].transpose().tolist()
+
+    save_json(f"{outfile}{code}", out, ".CENTERS")
+
 # ------------------------------------------------------------------------------
 
 def _analyze_metrics(data, T, filename, extension):
