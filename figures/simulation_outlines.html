@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="css/style.css" />
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script type="text/javascript" src="js/browser.js"></script>
+        <script type="text/javascript" src="js/functions.js"></script>
+        <script type="text/javascript" src="js/utilities.js"></script>
+    </head>
+    <body>
+        <h1>simulation outlines</h1>
+        <div id="buttons">
+            <button id="generate">GENERATE</button>
+            <button id="save">SAVE</button>
+        </div>
+        <div id="options">
+            <div id="simulations">
+                <strong>SIMULATION SET</strong>
+                <label class="inputs"><input type="radio" name="simulation" id="simulation_SYSTEM_REPRESENTATION">SYSTEM REPRESENTATION</label>
+                <label class="inputs"><input type="radio" name="simulation" id="simulation_CELL_STOCHASTICITY">CELL STOCHASTICITY</label>
+                <label class="inputs"><input type="radio" name="simulation" id="simulation_NUTRIENT_DYNAMICS">NUTRIENT_DYNAMICS</label>
+            </div>
+        </div>
+        <div id="canvas"></div>
+        <script>
+            var PREFIX = "simulation_outlines"
+            var SIZE = { "width": 800, "height": 400 }
+            var OPTIONS = [ "simulations" ]
+            var SELECTED = {
+                "radios": {
+                    "simulation": "SYSTEM_REPRESENTATION",
+                }
+            }
+            var LABELS = {
+                "context": {
+                    "C": "colony",
+                    "CHX": "tissue",
+                },
+                "geometry": {
+                    "rect": "rectangular",
+                    "hex": "hexagonal",
+                },
+                "dimension": {
+                    "2D": "2D",
+                    "3D": "3D",
+                },
+                "age": {
+                    "A0": "deterministic",
+                    "A1": "stochastic",
+                },
+                "volume": {
+                    "V0": "deterministic",
+                    "V1": "stochastic",
+                },
+                "profile": {
+                    "constant": "constant",
+                    "pulse": "pulse",
+                    "cycle": "cycle",
+                },
+                "level": {
+                    "LOW": "LOW",
+                    "BASAL": "BASAL",
+                    "HIGH": "HIGH",
+                },
+            }
+
+            var SIMULATIONS = {
+                "SYSTEM_REPRESENTATION": {
+                    "layout": ["context", "dimension", "geometry"],
+                    "order": [0, 1, 2],
+                    "selected": {
+                        "context": ["C", "CHX"],
+                        "geometry": ["rect", "hex"],
+                        "dimension": ["2D", "3D"],
+                    }
+                },
+                "CELL_STOCHASTICITY": {
+                    "layout": ["context", "age", "volume"],
+                    "order": [0, 1, 2],
+                    "selected": {
+                        "context": ["C", "CHX"],
+                        "age": ["A0", "A1"],
+                        "volume": ["V0", "V1"],
+                    }
+                },
+                "NUTRIENT_DYNAMICS": {
+                    "layout": ["context", "profile", "level"],
+                    "order": [0, 2, 1],
+                    "selected": {
+                        "context": ["C", "CHX"],
+                        "profile": ["constant", "pulse", "cycle"],
+                        "level": ["LOW", "BASAL", "HIGH"],
+                    }
+                },
+            }
+
+            initialize()
+
+            function PROCESSOR() {
+                let simulation = SELECTED.radios.simulation
+                let selected = SIMULATIONS[simulation].selected
+
+                let name = function(arr) {
+                    return simulation + "/" + simulation + "_" + arr[0] + "_" + arr[1] + "_" + arr[2] + ".OUTLINES.150.csv";
+                }
+
+                let layout = SIMULATIONS[simulation].layout
+                let order = SIMULATIONS[simulation].order
+                let make = processMake(layout, selected, order, name)
+                let p = processGrid(layout, selected, make)
+
+                return {
+                    "selected": selected,
+                    "layout": layout,
+                    "files": p.files,
+                    "margin": {
+                        "left": p.marginLeft,
+                        "top": p.marginTop,
+                        "right": 5,
+                        "bottom": 5,
+                        "axis": AXIS_EMPTY
+                    },
+                    "cols": p.nCols,
+                    "rows": p.nRows,
+                    "axis": {
+                        "x": { "bounds": [0, 14] },
+                        "y": { "bounds": [0, 14] },
+                        "c": { "bounds": [0, 1] }
+                    }
+                }
+            }
+
+            function PARSER(code, S, D) {
+                let data = []
+                let d = D.data.filter(e => e.z == "0").sort((a, b) => a["WEIGHT"] - b["WEIGHT"])
+
+                let geometry = "hex"
+                if (contains("geometry", S.layout)) {
+                    geometry = S.selected.geometry[D.i[S.layout.indexOf("geometry")]]
+                }
+
+                let colors = COLORMAPS['grayscale']
+                let cmap = d3.scaleLinear()
+                    .domain(linspace(S.axis.c.bounds[0],  S.axis.c.bounds[1], colors.length))
+                    .range(colors)
+
+                let symbols = [
+                    { "id": "hex", "points": makeHex() },
+                    { "id": "rect", "points": makeRect() },
+                ]
+
+                let hexPoints = [0, 1, 2, 3, 4, 5].map(function(f) {
+                    return {
+                        "id": "hexline" + f,
+                        "points": makeHexLine(f)
+                    }
+                })
+
+                let rectPoints = [0, 1, 2, 3].map(function(f) {
+                    return {
+                        "id": "rectline" + f,
+                        "points": makeRectLine(f)
+                    }
+                })
+
+                symbols = symbols.concat(hexPoints)
+                symbols = symbols.concat(rectPoints)
+
+                data.push(
+                    {
+                        "*": "symbol",
+                        "link": d.map(e => "#" + geometry + "line" + e.DIRECTION),
+                        "cx": d.map(e => Number(e.x)*(geometry == "hex" ? Math.sqrt(3) : 2)),
+                        "cy": d.map(e => Number(e.y)*(geometry == "hex" ? 1 : 2)),
+                        "fill": d.map(e => "none"),
+                        "stroke": d.map(e => cmap(e["WEIGHT"])),
+                    }
+                )
+
+                return { "data": [{ "id": "X", "x": 0, "y": 0, "data": data,
+                    "symbols": symbols }], "rows": 1, "cols": 1 }
+            }
+
+            function LABELLER(S, P) { return labelGrid(S, P) }
+
+            function DECORATOR(g, S, i, p) {
+                addBorder(g, S.subpanel.w, S.subpanel.h, "#ccc")
+                if (i.reduce((a, b) => a + b) == 0) {
+                    let diam = S.axis.x.bounds[1]*2
+                    let scale = Math.min(S.subpanel.h/(diam + 1)/2, S.subpanel.w/(diam + 1)/2)
+                    let defs = S.G.append("defs")
+                    p.symbols.map(function(sym) {
+                        let path = sym.points.map((e,i) => (i == 0 ? "m" : "l") + " " + scale*e[0] + "," + scale*e[1])
+                        defs.append("path")
+                            .attr("id", sym.id)
+                            .attr("stroke-linecap", "round")
+                            .attr("d", path.join(" ").toUpperCase())
+                    })
+                }
+            }
+        </script>
+    </body>
+</html>
