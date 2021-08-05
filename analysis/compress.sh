@@ -26,6 +26,7 @@ JSONS=(
 CSVS=(
     ".DISTRIBUTION"
     ".LOCATIONS"
+    ".POSITIONS"
     ".OUTLINES"
 )
 

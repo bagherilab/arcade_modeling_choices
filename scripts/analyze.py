@@ -53,6 +53,16 @@ def add_coordinates(D, t):
     d["c"] = coords
     return d
 
+def adjust_portion_size(arr, n):
+    """Update portion distribution given max number of portions."""
+    arr = [max(1, a) for a in arr]
+    if arr:
+        while np.sum(arr) > n:
+            arr[arr.index(max(arr))] -= 1
+        while np.sum(arr) < n:
+            arr[arr.index(min(arr))] += 1
+    return arr
+
 # GENERAL METRICS ==============================================================
 
 def get_count(D, t, i):
@@ -317,6 +327,25 @@ def get_spatial_outlines(D):
 
     return pd.concat(outlines)
 
+def get_spatial_positions(D):
+    """Get colony positions and states."""
+    positions = []
+    hex = {'u', 'v', 'w'}.issubset(D.columns)
+    total_size = 6 if hex else 4
+
+    for name, group in D.groupby("c"):
+        total_volume = group.volume.sum()
+        portions = [int(round(v)) for v in group.volume.values/total_volume]
+        portions = adjust_portion_size(portions, total_size)
+        coords = [convert_coordinates(c) for c in group.c]
+
+        i = 0
+        for coord, portion, state in zip(coords, portions, group.state):
+            positions.append(coord + [i, portion, state])
+            i = i + portion
+
+    return pd.DataFrame(positions, columns=["x", "y", "z", "i", "n", "s"])
+
 # GENERAL ANALYSIS =============================================================
 
 def analyze_metrics(D, T, N, outfile, code, timepoints=[], seeds=[]):
@@ -396,6 +425,20 @@ def analyze_locations(D, T, N, outfile, code, timepoints=[], seeds=[]):
 
         header = "x,y,z,COUNT,VOLUME," + ",".join([f"STATE_{state}" for state in range(7)]) + "\n"
         save_csv(f"{outfile}{code}", header, list(zip(*out)), f".LOCATIONS.{format_time(t)}")
+
+def analyze_positions(D, T, N, outfile, code, timepoints=[], seeds=[]):
+    """Analyze cell states for each position."""
+
+    for t in timepoints:
+        for s in seeds:
+            d = add_coordinates(D, t)
+            d = d[(d.i == s) & (d.z == 0)]
+            positions = get_spatial_positions(d)
+
+            out = [list(r) for r in positions.to_records(index=False)]
+
+            header = "x,y,z,i,n,s\n"
+            save_csv(f"{outfile}{code}", header, list(zip(*out)), f".POSITIONS.{format_time(t)}.{format_seed(s)}")
 
 def analyze_distribution(D, T, N, outfile, code, timepoints=[], seeds=[]):
     """Analyze results for cell state distributions."""

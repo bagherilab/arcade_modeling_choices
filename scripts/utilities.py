@@ -82,6 +82,10 @@ def format_time(time):
     """Format time as string."""
     return str(time).replace(".", "").zfill(3)
 
+def format_seed(seed):
+    """Format seed as string."""
+    return str(seed).zfill(2)
+
 def is_tar(file):
     """Check if file has .tar.xz extension."""
     return file[-7:] == ".tar.xz"
