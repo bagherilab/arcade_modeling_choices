@@ -9,7 +9,7 @@
         <script type="text/javascript" src="js/utilities.js"></script>
     </head>
     <body>
-        <h1>simulation outlines</h1>
+        <h1>simulation states</h1>
         <div id="buttons">
             <button id="generate">GENERATE</button>
             <button id="save">SAVE</button>
@@ -24,7 +24,7 @@
         </div>
         <div id="canvas"></div>
         <script>
-            var PREFIX = "simulation_outlines"
+            var PREFIX = "simulation_states"
             var SIZE = { "width": 800, "height": 400 }
             var OPTIONS = [ "simulations" ]
             var SELECTED = {
@@ -102,7 +102,7 @@
                 let selected = SIMULATIONS[simulation].selected
 
                 let name = function(arr) {
-                    return simulation + "/" + simulation + "_" + arr[0] + "_" + arr[1] + "_" + arr[2] + ".OUTLINES.150.csv";
+                    return simulation + "/" + simulation + "_" + arr[0] + "_" + arr[1] + "_" + arr[2] + ".POSITIONS.150.00.csv";
                 }
 
                 let layout = SIMULATIONS[simulation].layout
@@ -126,53 +126,58 @@
                     "axis": {
                         "x": { "bounds": [0, 14] },
                         "y": { "bounds": [0, 14] },
-                        "c": { "bounds": [0, 1] }
                     }
                 }
             }
 
             function PARSER(code, S, D) {
-                let d = D.data.filter(e => e.z == "0").sort((a, b) => a["WEIGHT"] - b["WEIGHT"])
+                let d = D.data
 
                 let geometry = "hex"
                 if (contains("geometry", S.layout)) {
                     geometry = S.selected.geometry[D.i[S.layout.indexOf("geometry")]]
                 }
 
-                let colors = COLORMAPS['grayscale']
-                let cmap = d3.scaleLinear()
-                    .domain(linspace(S.axis.c.bounds[0],  S.axis.c.bounds[1], colors.length))
-                    .range(colors)
-
                 let symbols = [
                     { "id": "hex", "points": makeHex() },
                     { "id": "rect", "points": makeRect() },
                 ]
 
-                let hexPoints = [0, 1, 2, 3, 4, 5].map(function(f) {
+                let hexIndicies = []
+                for (let i = 1; i < 6; i++) {
+                   for (let j = 0; j < 6; j++) { hexIndicies.push([i, j]) }
+                }
+
+                let hexPoints = hexIndicies.map(function(f) {
                     return {
-                        "id": "hexline" + f,
-                        "points": makeHexLine(f)
+                        "id": "hex_" + f[0] + "_" + f[1],
+                        "points": makeHexSub(f[1], f[0])
                     }
                 })
 
-                let rectPoints = [0, 1, 2, 3].map(function(f) {
+                let rectIndicies = []
+                for (let i = 1; i < 4; i++) {
+                   for (let j = 0; j < 4; j++) { rectIndicies.push([i, j]) }
+                }
+
+                let rectPoints = rectIndicies.map(function(f) {
                     return {
-                        "id": "rectline" + f,
-                        "points": makeRectLine(f)
+                        "id": "rect_" + f[0] + "_" + f[1],
+                        "points": makeRectSub(f[1], f[0])
                     }
                 })
 
                 symbols = symbols.concat(hexPoints)
                 symbols = symbols.concat(rectPoints)
 
+                let n = (geometry == "hex" ? 6 : 4)
                 let data = [{
                     "*": "symbol",
-                    "link": d.map(e => "#" + geometry + "line" + e.DIRECTION),
+                    "link": d.map(e => (e.n == n ? "#" + geometry : "#" + geometry + "_" + e.n + "_" + e.i)),
                     "cx": d.map(e => Number(e.x)*(geometry == "hex" ? Math.sqrt(3) : 2)),
                     "cy": d.map(e => Number(e.y)*(geometry == "hex" ? 1 : 2)),
-                    "fill": d.map(e => "none"),
-                    "stroke": d.map(e => cmap(e["WEIGHT"])),
+                    "fill": d.map(e => COLORS["states"][e.s]),
+                    "stroke": d.map(e => null),
                 }]
 
                 return { "data": [{ "id": "X", "x": 0, "y": 0, "data": data,
@@ -191,7 +196,6 @@
                         let path = sym.points.map((e,i) => (i == 0 ? "m" : "l") + " " + scale*e[0] + "," + scale*e[1])
                         defs.append("path")
                             .attr("id", sym.id)
-                            .attr("stroke-linecap", "round")
                             .attr("d", path.join(" ").toUpperCase())
                     })
                 }

@@ -98,6 +98,20 @@ function makeRectLine(dir) {
     }
 }
 
+function makeHexSub(i, n) {
+    let hex = makeHex()
+    let tri = []
+    for (let p = i; p <= i + n; p++) { tri.push([hex[p%6][0], hex[p%6][1]]) }
+    return [[0,0]].concat(tri)
+}
+
+function makeRectSub(i, n) {
+    let rect = makeRect()
+    let squ = []
+    for (let p = i; p <= i + n; p++) { squ.push([rect[p%4][0], rect[p%4][1]]) }
+    return [[0,0]].concat(squ)
+}
+
 // -----------------------------------------------------------------------------
 
 function makeVertLabel(h, x, y, text, fill) {
