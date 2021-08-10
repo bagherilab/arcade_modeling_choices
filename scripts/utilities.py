@@ -2,6 +2,7 @@ import json
 import csv
 import re
 import lzma
+import tarfile
 import numpy as np
 import pandas as pd
 
@@ -28,7 +29,6 @@ def load(filename, exclude=[]):
         df = pd.DataFrame()
 
         for chunk in pd.read_csv(file, chunksize=CHUNKSIZE, dtype=DTYPES):
-            print(chunk.iloc[0,:])
             chunk = chunk[~chunk['pop'].isin(exclude)]
             df = pd.concat([df, chunk])
 
@@ -45,6 +45,23 @@ def load(filename, exclude=[]):
 
     return df, T, N
 
+
+def load_tar(outfile, extension):
+    # Open compressed files, if they exist. Start by trying full extension.
+    try:
+        tar = tarfile.open(f"{outfile}{extension}.tar.xz")
+        return tar
+    except:
+        tar = None
+
+    # Also try opening upper level extension.
+    try:
+        first = extension.split(".")[1]
+        tar = tarfile.open(f"{outfile}.{first}.tar.xz")
+    except:
+        tar = None
+
+    return tar
 
 def load_json(json_file, tar=None):
     """Load .json file."""

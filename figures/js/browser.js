@@ -28,8 +28,16 @@ var AXIS_PADDING = {
     "right": 0
 }
 
+
+var UNIT = function(e) {
+    return '<tspan font-weight="normal" font-size="' + (FONT_SIZE - 2) + 'pt">(' + e + ')</tspan>'
+}
 var COLORMAPS = {
     "grayscale": ["#ddd", "#333"]
+}
+
+var COLORS = {
+    "states": ["#dddddd", "#f00", "#bbbbbb", "#111111", "#666666", "#f00", "#f00"],
 }
 
 // GENERAL BEHAVIOR ============================================================
@@ -165,8 +173,8 @@ function subgenerate(g, S, d) {
 
     // Calculate subpanel layout.
     let pad = SUBPANEL_PADDING
-    let dw = S.panel.w/P.cols - S.margin.axis.left - S.margin.axis.right
-    let dh = S.panel.h/P.rows - S.margin.axis.top - S.margin.axis.bottom
+    let dw = (S.panel.w - S.margin.axis.left - S.margin.axis.right)/P.cols
+    let dh = (S.panel.h - S.margin.axis.top - S.margin.axis.bottom)/P.rows
     S.subpanel = updateSettings(P, pad, dw, dh)
 
     if (typeof S.axis.x === "function") {

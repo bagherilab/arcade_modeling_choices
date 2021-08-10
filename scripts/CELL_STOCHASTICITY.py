@@ -1,4 +1,4 @@
-from .utilities import load
+from .utilities import load, load_tar
 import tarfile
 
 class CELL_STOCHASTICITY():
@@ -47,3 +47,21 @@ class CELL_STOCHASTICITY():
                     tar = tarfile.open(infile)
                     key = { "context": context, "age": age, "volume": volume }
                     func(tar, timepoints, key, outfile, code)
+
+    @staticmethod
+    def loop(output_path, func1, func2, extension, name=NAME,
+             contexts=CONTEXTS, volumes=VOLUMES, ages=AGES,
+             timepoints=[]):
+        outfile = f"{output_path}{name}/{name}"
+        out = { "data": [] }
+        tar = load_tar(outfile, extension)
+
+        for context, suffix, exclude in contexts:
+            for t in timepoints:
+                for volume in volumes:
+                    for age in ages:
+                        code = f"_{context}{suffix}_{age}_{volume}"
+                        key = { "time": t, "context": context, "age": age, "volume": volume }
+                        func1(outfile, out, key, extension, code, tar=tar)
+
+        func2(outfile, extension, out)

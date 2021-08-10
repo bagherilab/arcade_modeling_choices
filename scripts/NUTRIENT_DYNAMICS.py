@@ -1,4 +1,4 @@
-from .utilities import load
+from .utilities import load, load_tar
 import tarfile
 
 class NUTRIENT_DYNAMICS():
@@ -47,3 +47,21 @@ class NUTRIENT_DYNAMICS():
                     tar = tarfile.open(infile)
                     key = { "context": context, "level": level, "profile": profile }
                     func(tar, timepoints, key, outfile, code)
+
+    @staticmethod
+    def loop(output_path, func1, func2, extension, name=NAME,
+             contexts=CONTEXTS, levels=LEVELS, profiles=PROFILES,
+             timepoints=[]):
+        outfile = f"{output_path}{name}/{name}"
+        out = { "data": [] }
+        tar = load_tar(outfile, extension)
+
+        for context, suffix, exclude in contexts:
+            for t in timepoints:
+                for level in levels:
+                    for profile in profiles:
+                        code = f"_{context}{suffix}_{level}_{profile}"
+                        key = { "time": t, "context": context, "level": level, "profile": profile }
+                        func1(outfile, out, key, extension, code, tar=tar)
+
+        func2(outfile, extension, out)

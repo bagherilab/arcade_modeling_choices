@@ -57,8 +57,8 @@ function processGrid(layout, selected, make) {
 function plotPath(g, S) {
     g.append("path")
         .attr("d", function(d) {
-            let xscale = (d.scale ? S.xscale[d.scale.x] : S.xscale)
-            let yscale = (d.scale ? S.yscale[d.scale.y] : S.yscale)
+            let xscale = (d.xscale ? S.xscale[d.xscale] : S.xscale)
+            let yscale = (d.yscale ? S.yscale[d.yscale] : S.yscale)
             let makePath = d3.line()
                 .x(m => xscale(m))
                 .y((m,i) => yscale(d.y[i]))

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="css/style.css" />
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script type="text/javascript" src="js/browser.js"></script>
+        <script type="text/javascript" src="js/functions.js"></script>
+        <script type="text/javascript" src="js/utilities.js"></script>
+    </head>
+    <body>
+        <h1>simulation metrics</h1>
+        <div id="buttons">
+            <button id="generate">GENERATE</button>
+            <button id="save">SAVE</button>
+        </div>
+        <div id="options">
+            <div id="simulations">
+                <strong>SIMULATION SET</strong>
+                <label class="inputs"><input type="radio" name="simulation" id="simulation_SYSTEM_REPRESENTATION">SYSTEM REPRESENTATION</label>
+                <label class="inputs"><input type="radio" name="simulation" id="simulation_CELL_STOCHASTICITY">CELL STOCHASTICITY</label>
+                <label class="inputs"><input type="radio" name="simulation" id="simulation_NUTRIENT_DYNAMICS">NUTRIENT DYNAMICS</label>
+            </div>
+            <div id="conditions">
+                <strong>CONDITIONS</strong>
+                <br />
+                <em>SYSTEM REPRESENTATION</em>:
+                <label class="inputs"><input type="radio" name="condition" id="condition_geometry">GEOMETRY</label>
+                <label class="inputs"><input type="radio" name="condition" id="condition_dimension">DIMENSION</label>
+                <br />
+                <em>CELL STOCASTICITY</em>:
+                <label class="inputs"><input type="radio" name="condition" id="condition_age">AGE</label>
+                <label class="inputs"><input type="radio" name="condition" id="condition_volume">VOLUME</label>
+                <br />
+                <em>NUTRIENT DYNAMICS</em>:
+                <label class="inputs"><input type="radio" name="condition" id="condition_level">LEVEL</label>
+                <label class="inputs"><input type="radio" name="condition" id="condition_profile">PROFILE</label>
+            </div>
+        </div>
+        <div id="canvas"></div>
+        <script>
+            var PREFIX = "simulation_metrics"
+            var SIZE = { "width": 600, "height": 600 }
+            var OPTIONS = [ "simulations", "conditions" ]
+            var SELECTED = {
+                "radios": {
+                    "simulation": "SYSTEM_REPRESENTATION",
+                    "condition": "geometry",
+                }
+            }
+            var LABELS = {
+                "metric": {
+                  "GROWTH": "growth",
+                  "SYMMETRY": "symmetry",
+                  "CYCLES": "cycles"
+                },
+                "geometry": {
+                    "rect": "rectangular",
+                    "hex": "hexagonal",
+                },
+                "dimension": {
+                    "2D": "2D",
+                    "3DC": "3D*",
+                    "3D": "3D",
+                },
+                "age": {
+                    "A0": "deterministic",
+                    "A1": "stochastic",
+                },
+                "volume": {
+                    "V0": "deterministic",
+                    "V1": "stochastic",
+                },
+                "profile": {
+                    "constant": "constant",
+                    "pulse": "pulse",
+                    "cycle": "cycle",
+                },
+                "level": {
+                    "LOW": "LOW",
+                    "BASAL": "BASAL",
+                    "HIGH": "HIGH",
+                },
+            }
+
+            var SIMULATIONS = {
+                "geometry": ["rect", "hex"],
+                "dimension": ["2D", "3DC", "3D"],
+                "age": ["A0", "A1"],
+                "volume": ["V0", "V1"],
+                "profile": ["constant", "pulse", "cycle"],
+                "level": ["LOW", "BASAL", "HIGH"],
+            }
+
+            initialize()
+
+            var Y_AXIS = {
+                "GROWTH": {
+                    "scale": 30, // hexagon/day => um/day
+                    "bounds": [20, 60], // mm/day
+                    "title": "Growth Rate " + UNIT("\u03BCm/day"),
+                    "n": 3,
+                    "padding": 1
+                },
+                "SYMMETRY": {
+                    "scale": 1,
+                    "bounds": [0.5, 0.9], // unitless
+                    "title": 'Symmetry',
+                    "n": 3,
+                    "padding": 0.01
+                },
+                "CYCLES": {
+                    "scale": 1/60.0, // min => hours
+                    "bounds": [12, 24], // hours
+                    "title": "Cycle Length " + UNIT("hours"),
+                    "n": 3,
+                    "padding": 1
+                },
+            }
+
+            function PROCESSOR() {
+                let simulation = SELECTED.radios.simulation
+                let condition = SELECTED.radios.condition
+
+                let selected = {}
+                selected["metric"] = ["GROWTH", "SYMMETRY", "CYCLES"]
+                selected[condition] = SIMULATIONS[condition]
+
+                let name = function(arr) {
+                    return simulation + "/" + simulation + ".METRICS." + arr[1] + ".json";
+                }
+
+                let layout = [condition, "metric"]
+                let make = processMake(layout, selected, [0, 1], name)
+                let p = processGrid(layout, selected, make)
+
+                return {
+                    "selected": selected,
+                    "layout": layout,
+                    "files": p.files,
+                    "margin": {
+                        "left": p.marginLeft,
+                        "top": p.marginTop,
+                        "right": 5,
+                        "bottom": 5,
+                        "axis": AXIS_PADDING
+                    },
+                    "cols": p.nCols,
+                    "rows": p.nRows,
+                    "axis": {
+                        "keys": ["GROWTH", "SYMMETRY", "CYCLES"],
+                        "x": {
+                            "bounds": [0, 2],
+                            "title": "Time " + UNIT("weeks"),
+                            "n": 3,
+                            "scale": 1/7,
+                            "padding": 0.1
+                        },
+                        "y": (metric => Y_AXIS[metric]),
+                    }
+                }
+            }
+
+            function PARSER(code, S, D) {
+                let metric = S.selected.metric[D.i[1]]
+                let yaxis = S.axis.y(metric)
+                let layout = S.layout[0]
+                let d = D.data.data.filter(e => e[layout] == S.selected[layout][D.i[0]])
+                let data = { "C": [], "CH": [] }
+
+                let styling = {
+                    "geometry": "dimension",
+                    "dimension": "geometry",
+                    "age": "volume",
+                    "volume": "age",
+                    "level": "profile",
+                    "profile": "level",
+                }
+
+                let style = styling[layout]
+
+                let widths = {
+                    "dimension": {
+                        "2D": 1.5,
+                        "3D": 1.5,
+                        "3DC": 1
+                    },
+                    "geometry": {
+                        "rect": 1,
+                        "hex": 1,
+                    },
+                    "age": {
+                        "A0": 0.5,
+                        "A1": 1,
+                    },
+                    "volume": {
+                        "V0": 0.5,
+                        "V1": 1,
+                    },
+                    "profile": {
+                        "constant": 0.5,
+                        "pulse": 1,
+                        "cycle": 1,
+                    },
+                    "level": {
+                        "LOW": 1,
+                        "BASAL": 1,
+                        "HIGH": 1,
+                    }
+                }
+
+                let dashes = {
+                    "dimension": {
+                        "2D": "2,2",
+                        "3D": null,
+                        "3DC": null
+                    },
+                    "geometry": {
+                        "rect": null,
+                        "hex": null,
+                    },
+                    "age": {
+                        "A0": null,
+                        "A1": "2,2",
+                    },
+                    "volume": {
+                        "V0": null,
+                        "V1": "2,2",
+                    },
+                    "profile": {
+                        "constant": null,
+                        "pulse": "3,1",
+                        "cycle": "2,2",
+                    },
+                    "level": {
+                        "LOW": null,
+                        "BASAL": null,
+                        "HIGH": null,
+                    },
+                }
+
+                let strokes = {
+                    "dimension": {
+                        "2D": "#555",
+                        "3D": "#555",
+                        "3DC": "#555",
+                    },
+                    "geometry": {
+                        "rect": "#555",
+                        "hex": "#222",
+                    },
+                    "age": {
+                        "A0": "#555",
+                        "A1": "#222",
+                    },
+                    "volume": {
+                        "V0": "#555",
+                        "V1": "#222",
+                    },
+                    "profile": {
+                        "constant": "#888",
+                        "pulse": "#555",
+                        "cycle": "#222",
+                    },
+                    "level": {
+                        "LOW": "#888",
+                        "BASAL": "#555",
+                        "HIGH": "#222",
+                    },
+                }
+
+                d.map(function(e) {
+                    let y = e['_Y'].map(e => Number(e)*yaxis.scale)
+                    let remove = findNaNs(y)
+                    y = removeNaNs(y, remove)
+
+                    let x = D.data["_X"]
+                        .filter((e, i) => remove[i])
+                        .map(e => (Number(e) - 1)*S.axis.x.scale)
+
+                    data[e.context].push({
+                        "*": "path",
+                        "yscale": metric,
+                        "x": x,
+                        "y": y,
+                        "width": widths[style][e[style]],
+                        "dash": dashes[style][e[style]],
+                        "stroke": strokes[style][e[style]],
+                    })
+                })
+
+                return {
+                    "data": [
+                      { "id": "C", "x": 0, "y": 0, "data": data["C"] },
+                      { "id": "CH", "x": 1, "y": 0, "data": data["CH"] }
+                    ],
+                    "rows": 1,
+                    "cols": 2,
+                }
+            }
+
+            function LABELLER(S, P) { return labelGrid(S, P) }
+
+            function DECORATOR(g, S, i, p) {
+                addBorder(g, S.subpanel.w, S.subpanel.h, "#ccc")
+
+                // Create and align groups for ticks.
+                let dx = alignHorzAxis(S, i) + p.x*(S.subpanel.w + SUBPANEL_PADDING)
+                let dy = alignVertAxis(S, i)
+
+                // Create group to hold ticks.
+                let G = S.G.append("g")
+                    .attr("id", "ticks")
+                    .attr("transform", "translate(" + dx + "," + dy + ")")
+
+                let A = S.axis
+
+                // Create axis ticks and labels.
+                let ticks = []
+                let labels = []
+                ticks.push(makeHorzTicks(S, 0, S.subpanel.h, A.x))
+
+                if (p.x == 0) {
+                    let metric = S.selected.metric[i[1]]
+                    ticks.push(makeVertTicks(S, 0, 0, A.y(metric), S.yscale[metric]))
+                    labels.push(makeVertLabel(S.subpanel.h, alignVertText(S), 0, A.y(metric).title, "none"))
+                    labels.push(makeHorzLabel(S.subpanel.w*2, 0, alignHorzText(S), A.x.title, "none"))
+
+                    G.append("text")
+                        .text("colony")
+                        .attr("font-size", (FONT_SIZE - 2) + "pt")
+                        .attr("font-family", "Helvetica")
+                        .attr("text-anchor", "middle")
+                        .attr("font-style", "italic")
+                        .attr("x", S.subpanel.w/2)
+                        .attr("y", FONT_SIZE + 2)
+                } else {
+                    G.append("text")
+                        .text("tissue")
+                        .attr("font-size", (FONT_SIZE - 2) + "pt")
+                        .attr("font-family", "Helvetica")
+                        .attr("text-anchor", "middle")
+                        .attr("font-style", "italic")
+                        .attr("x", S.subpanel.w/2)
+                        .attr("y", FONT_SIZE + 2)
+                }
+
+                addTicks(G, ticks)
+                addLabels(G, labels)
+            }
+        </script>
+    </body>
+</html>

@@ -58,6 +58,16 @@ function contains(val, arr) {
 
 // -----------------------------------------------------------------------------
 
+function findNaNs(arr) {
+    return arr.map((e, i) => !(Number.isNaN(e) || e == "nan"))
+}
+
+function removeNaNs(arr, remove) {
+    return arr.filter((e, i) => remove[i])
+}
+
+// -----------------------------------------------------------------------------
+
 function makeHex() {
     let points = [0, 1, 2, 3, 4, 5, 0]
     let theta = points.map(e => Math.PI*(60*e)/180.0)
