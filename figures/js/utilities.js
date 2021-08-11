@@ -138,7 +138,7 @@ function makeHorzLabel(w, x, y, text, fill) {
     }
 }
 
-function makeInnerLabels(S, P, L, labels, ind, layout) {
+function makeInnerXLabels(S, P, L, labels, ind, layout) {
     let len = L[ind].length
     let label = layout[ind]
     if (len == 1) {
@@ -148,6 +148,21 @@ function makeInnerLabels(S, P, L, labels, ind, layout) {
         let dW = S.panel.dw
         for (let i = 0; i < P.cols; i++) {
             labels.push(makeHorzLabel(dW - PANEL_PADDING, PANEL_PADDING/2 + i*dW, 0,
+                LABELS[label][L[ind][i%len]], shadeColor("#cccccc", i%len/L[ind].length)))
+        }
+    }
+}
+
+function makeInnerYLabels(S, P, L, labels, ind, layout) {
+    let len = L[ind].length
+    let label = layout[ind]
+    if (len == 1) {
+        let H = S.panel.dh*P.rows - PANEL_PADDING
+        labels.push(makeVertLabel(H, 0, PANEL_PADDING/2, LABELS[label][L[ind][0]], "#cccccc"))
+    } else {
+        let dH = S.panel.dh
+        for (let i = 0; i < P.rows; i++) {
+            labels.push(makeVertLabel(dH - PANEL_PADDING, 0, PANEL_PADDING/2 + i*dH,
                 LABELS[label][L[ind][i%len]], shadeColor("#cccccc", i%len/L[ind].length)))
         }
     }
@@ -289,6 +304,32 @@ function compileTripleFiles(layout, selected, make) {
     }
 
     return files
+}
+
+function compileQuadrupleFiles(layout, selected, make) {
+    var files = [];
+    var len = layout.map(function(d) { return selected[d].length; })
+    var A = selected[layout[0]];
+    var B = selected[layout[1]];
+    var C = selected[layout[2]];
+    var D = selected[layout[3]];
+
+    for (var a = 0; a < len[0]; a++) {
+        for (var b = 0; b < len[1]; b++) {
+            for (var c = 0; c < len[2]; c++) {
+                for (var d = 0; d < len[3]; d++) {
+                    var abcd = make(A[a], B[b], C[c], D[d], a, b, c, d);
+                    files.push({
+                        "file": abcd.file,
+                        "x": abcd.x,
+                        "y": abcd.y,
+                        "i": [a, b, c, d] });
+                }
+            }
+        }
+    }
+
+    return files;
 }
 
 // -----------------------------------------------------------------------------

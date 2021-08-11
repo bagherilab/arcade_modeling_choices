@@ -20,6 +20,12 @@ function processMake(layout, selected, order, name) {
                 let cn = selected[layout[2]].length
                 return { "x": iA*cn + iC, "y": iB, "file": file(order, [A, B, C]) }
             }
+        case 4:
+            return function(A, B, C, D, iA, iB, iC, iD) {
+                let cn = selected[layout[2]].length
+                let dn = selected[layout[3]].length
+                return { "x": iA*cn + iC, "y": iB*dn + iD, "file": file(order, [A, B, C, D]) }
+            }
     }
 }
 
@@ -48,6 +54,14 @@ function processGrid(layout, selected, make) {
                 "marginTop": 2*LABEL_SIZE + LABEL_PADDING,
                 "nCols": selected[layout[0]].length*selected[layout[2]].length,
                 "nRows": selected[layout[1]].length
+            }
+        case 4:
+            return {
+                "files": compileQuadrupleFiles(layout, selected, make),
+                "marginLeft": 2*LABEL_SIZE + LABEL_PADDING,
+                "marginTop": 2*LABEL_SIZE + LABEL_PADDING,
+                "nCols": selected[layout[0]].length*selected[layout[2]].length,
+                "nRows": selected[layout[1]].length*selected[layout[3]].length
             }
     }
 }
@@ -129,6 +143,25 @@ function plotSymbol(g, S) {
         .attr("stroke-width", d => d.width)
 }
 
+function plotImage(g, S) {
+    let diam = S.axis.x.bounds[1]*2
+    let scale = Math.min(S.subpanel.h/(diam + 1)/2, S.subpanel.w/(diam + 1)/2)
+
+    g.append("path")
+        .attr("transform", function(d) {
+            return "translate("
+                + (S.subpanel.w/2 + scale*d.cx) + ","
+                + (S.subpanel.h/2 + scale*d.cy) + ")" })
+        .attr("d", function(d) {
+            let path = d.path.map((e,i) => (i == 0 ? "m" : "l") + " " + scale*e[0] + "," + scale*e[1])
+            return (d.abs ? path.join(" ").toUpperCase() : path.join(" "))
+        })
+        .attr("fill", d => d.fill)
+        .attr("stroke", d => d.stroke)
+        .attr("stroke-width", d => (d.width ? d.width : 1))
+        .attr("stroke-linecap", d => (d.linecap ? d.linecap : "butt"))
+}
+
 function plotCircle(g, S) {
     let R = Math.min(5, Math.max(2, Math.min(S.subpanel.dw, S.subpanel.dh)/100))
     g.selectAll("circle")
@@ -193,6 +226,7 @@ function labelGrid(S, P) {
         case 1: return labelOne(S, P)
         case 2: return labelTwo(S, P)
         case 3: return labelThree(S, P)
+        case 4: return labelFour(S, P)
     }
 }
 
@@ -255,7 +289,34 @@ function labelThree(S, P) {
 
     L[0].map((e, i) => labels.push(outerX(e, i)))
     L[1].map((e, i) => labels.push(outerY(e, i)))
-    if (L[2].length > 0) { makeInnerLabels(S, P, L, labels, 2, layout) }
+    if (L[2].length > 0) { makeInnerXLabels(S, P, L, labels, 2, layout) }
+
+    return labels
+}
+
+function labelFour(S, P) {
+    let labels = []
+    let layout = S.layout
+    if (Array.isArray(S.layout[0])) { layout = S.selected.ordering }
+
+    let L = layout.map(e => S.selected[e].filter(f => f != ""))
+
+    let outerX = function(e, i) {
+        let W = S.panel.dw*L[2].length
+        return makeHorzLabel(W - PANEL_PADDING, PANEL_PADDING/2 + W*i, -LABEL_SIZE - LABEL_PADDING,
+            LABELS[layout[0]][e], shadeColor("#aaaaaa", i/L[0].length))
+    }
+
+    let outerY = function(e, i) {
+        let H = S.panel.dh*L[3].length
+        return makeVertLabel(H - PANEL_PADDING, -LABEL_SIZE - LABEL_PADDING, PANEL_PADDING/2 + H*i,
+            LABELS[layout[1]][e], shadeColor("#aaaaaa", i/L[1].length))
+    }
+
+    L[0].map((e, i) => labels.push(outerX(e, i)))
+    L[1].map((e, i) => labels.push(outerY(e, i)))
+    if (L[2].length > 0) { makeInnerXLabels(S, P, L, labels, 2, layout) }
+    if (L[3].length > 0) { makeInnerYLabels(S, P, L, labels, 3, layout) }
 
     return labels
 }

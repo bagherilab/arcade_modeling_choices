@@ -62,3 +62,17 @@ def save_center_layers(data, T, filename, extension):
     out = calculate_nan_statistics(data)
     out['_X'] = T
     save_json(filename, out, extension)
+
+# COLONY BORDERS ===============================================================
+
+def get_colony_borders(D, T, N, outfile, code, timepoints=[], seeds=[]):
+    """Extracts colony borders for specified seed and timepoint."""
+
+    d = add_coordinates(D, timepoints)
+    d = d[d.i == seeds]
+
+    outlines = get_spatial_outlines(d)
+    out = [list(r[-1]) + [r[2]] for r in outlines.to_records(index=False)]
+
+    header = "x,y,z,DIRECTION\n"
+    save_csv(f"{outfile}{code}", header, list(zip(*out)), f".BORDERS")

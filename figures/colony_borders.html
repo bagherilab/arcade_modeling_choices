@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="css/style.css" />
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script type="text/javascript" src="js/browser.js"></script>
+        <script type="text/javascript" src="js/functions.js"></script>
+        <script type="text/javascript" src="js/utilities.js"></script>
+    </head>
+    <body>
+        <h1>colony outlines</h1>
+        <div id="buttons">
+            <button id="generate">GENERATE</button>
+            <button id="save">SAVE</button>
+        </div>
+        <div id="canvas"></div>
+        <script>
+            var PREFIX = "colony_outlines"
+            var SIZE = { "width": 700, "height": 400 }
+            var OPTIONS = [ ]
+            var SELECTED = { }
+            var LABELS = {
+                "x": { "": "" },
+                "context": {
+                    "C": "colony",
+                    "CHX": "tissue",
+                },
+                "geometry": {
+                    "rect": "rectangular",
+                    "hex": "hexagonal",
+                },
+            }
+
+            initialize()
+
+            function PROCESSOR() {
+                let selected = {
+                    "context": ["C", "CHX"],
+                    "geometry": ["hex", "rect"],
+                    "x": [""],
+                }
+
+                let name = function(arr) {
+                    return "SYSTEM_REPRESENTATION/SYSTEM_REPRESENTATION_"
+                        + arr[1] + "_3D_" + arr[3] + ".BORDERS.csv"
+                        + "~SYSTEM_REPRESENTATION/SYSTEM_REPRESENTATION_"
+                        + arr[1] + "_2D_" + arr[3] + ".BORDERS.csv"
+                }
+
+                let layout = ["x", "context", "x", "geometry"]
+                let make = processMake(layout, selected, [0, 1, 2, 3], name)
+                let p = processGrid(layout, selected, make)
+
+                return {
+                    "selected": selected,
+                    "layout": layout,
+                    "files": p.files,
+                    "margin": {
+                        "left": p.marginLeft,
+                        "top": 10,
+                        "right": 5,
+                        "bottom": 5,
+                        "axis": AXIS_EMPTY
+                    },
+                    "cols": p.nCols,
+                    "rows": p.nRows,
+                    "axis": {
+                        "x": { "bounds": [0, 12] },
+                        "y": { "bounds": [0, 12] },
+                    }
+                }
+            }
+
+            function PARSER(code, S, D) {
+                let geometry = D.i[3] == 0 ? "hex" : "rect"
+                let z_coordinates = [-15, -10, -5, 0, 5, 10, 15]
+                let data = []
+
+                z_coordinates.map(function(z, i) {
+                    let d = []
+
+                    let d0 = D.data2
+                    d0.map(function(e) {
+                        d.push({
+                            "*": "image",
+                            "path": (geometry === "hex" ? makeHexLine(Number(e.DIRECTION)) : makeRectLine(Number(e.DIRECTION))),
+                            "cx": e.x*(geometry === "hex" ? Math.sqrt(3) : 2),
+                            "cy": e.y*(geometry === "hex" ? 1 : 2),
+                            "fill": "none",
+                            "stroke": "#999",
+                            "width": 0.5,
+                            "linecap": "round",
+                            "abs": true
+                        })
+                    })
+
+                    let dz = D.data1.filter(e => e.z == z)
+                    dz.map(function(e) {
+                        d.push({
+                            "*": "image",
+                            "path": (geometry === "hex" ? makeHexLine(Number(e.DIRECTION)) : makeRectLine(Number(e.DIRECTION))),
+                            "cx": e.x*(geometry === "hex" ? Math.sqrt(3) : 2),
+                            "cy": e.y*(geometry === "hex" ? 1 : 2),
+                            "fill": "none",
+                            "stroke": "#000",
+                            "width": 1.5,
+                            "linecap": "round",
+                            "abs": true
+                        })
+                    })
+
+                    data.push({
+                        "id": z,
+                        "y": 0,
+                        "x": i,
+                        "data": d
+                    })
+                })
+
+                return { "data": data, "rows": 1, "cols": 7 }
+            }
+
+            function LABELLER(S, P) { return labelGrid(S, P) }
+
+            function DECORATOR(g, S, i, p) {
+                if (i.reduce((a, b) => a + b) == 0 && p.x == 0) {
+                    let color = "#888"
+                    let offset = PANEL_PADDING/2 + SUBPANEL_PADDING/2
+                    let gg = S.G.append("g").attr("transform", translate(offset, 0))
+
+                    gg.append("text")
+                        .text("center slice")
+                        .attr("font-size", (FONT_SIZE - 2) + "pt")
+                        .attr("font-family", "Helvetica")
+                        .attr("text-anchor", "middle")
+                        .attr("font-style", "italic")
+                        .attr("fill", color)
+                        .attr("x", 3*S.subpanel.dw + S.subpanel.w/2)
+                        .attr("y", 0)
+
+                    let padding = 10
+                    let above = 4*S.subpanel.dw - padding
+                    let below = 3*S.subpanel.dw - SUBPANEL_PADDING + padding
+                    let delta = S.subpanel.dw*3 - SUBPANEL_PADDING - 10 + padding
+
+                    gg.append("path")
+                        .attr("d", "m " + above + ",-4 l " + delta + ",0")
+                        .attr("stroke", color)
+                        .attr("marker-end", "url(#arrow)")
+
+                    gg.append("path")
+                        .attr("d", "m " + below + ",-4 l -" + delta + ",0")
+                        .attr("stroke", color)
+                        .attr("marker-end", "url(#arrow)")
+
+                    let defs = S.G.append("defs")
+                    defs.append("marker")
+                        .attr("id", "arrow")
+                        .attr("refX", 1)
+                        .attr("refY", 3)
+                        .attr("markerWidth", 10)
+                        .attr("markerHeight", 6)
+                        .attr("markerUnits", "userSpaceOnUse")
+                        .attr("orient", "auto")
+                        .append("path")
+                            .attr("d", "M 0 0 L 10 3 L 0 6 z")
+                            .attr("fill", color)
+                }
+            }
+        </script>
+    </body>
+</html>
