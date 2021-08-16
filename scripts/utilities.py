@@ -45,7 +45,6 @@ def load(filename, exclude=[]):
 
     return df, T, N
 
-
 def load_tar(outfile, extension):
     # Open compressed files, if they exist. Start by trying full extension.
     try:
@@ -71,6 +70,18 @@ def load_json(json_file, tar=None):
         return json.loads("".join(contents))
     else:
         return json.load(open(json_file, "r"))
+
+def load_csv(csv_file, tar=None):
+    """Load .csv file."""
+    if tar:
+        file = tar.extractfile(csv_file)
+        contents = [line.decode("utf-8") for line in file.readlines()]
+        return [row.strip().split(",") for row in contents]
+    else:
+        with open(csv_file, 'r') as file:
+            reader = csv.reader(file)
+            contents = [row for row in reader]
+        return contents
 
 def save_json(filename, out, extension):
     """Save contents as json."""
@@ -106,4 +117,3 @@ def format_seed(seed):
 def is_tar(file):
     """Check if file has .tar.xz extension."""
     return file[-7:] == ".tar.xz"
-

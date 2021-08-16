@@ -76,3 +76,42 @@ def get_colony_borders(D, T, N, outfile, code, timepoints=[], seeds=[]):
 
     header = "x,y,z,DIRECTION\n"
     save_csv(f"{outfile}{code}", header, list(zip(*out)), f".BORDERS")
+
+# CONCENTRATION PROFILES =======================================================
+
+def make_concentration_profiles(tar, timepoints, keys, outfile, code):
+    """Get average concentration at center of environment."""
+    out = {}
+
+    all_glucose = []
+    for member in tar.getmembers():
+        json = load_json(member, tar=tar)
+        glucose = [[tp["time"], tp["molecules"]["glucose"][0][0]] for tp in json["timepoints"]]
+        all_glucose = all_glucose + glucose
+        break
+
+    df = pd.DataFrame(all_glucose, columns=["time", "concentrations"])
+    means = df.groupby("time").mean()
+
+    header = "time,conc\n"
+    out = means.to_records()
+    save_csv(f"{outfile}{code}", header, list(zip(*out)), f".PROFILES")
+
+def merge_concentration_profiles(file, out, keys, extension, code, tar=None):
+    """Merge center concentrations across conditions."""
+    code = code.replace("_CHX_", "_CH_")
+    filepath = f"{file}{code}{extension}.csv"
+
+    if tar:
+        D = load_csv(filepath.split("/")[-1], tar=tar)
+    else:
+        D = load_csv(filepath)
+
+    rows = [[keys["context"], keys["level"], keys["profile"]] + r for r in D[1:]]
+    out["data"] = out["data"] + rows
+    out["header"] = ["context", "level", "profile"] + D[0]
+
+def save_concentration_profiles(file, extension, out):
+    """Save merged concentrations files."""
+    header = ",".join(out["header"]) + "\n"
+    save_csv(file, header, list(zip(*out["data"])), extension)
