@@ -95,7 +95,7 @@ function plotArea(g, S) {
             return d3.area()
                 .x(m => xscale(m))
                 .y0((m, i) => yscale(d.max[i]))
-                .y1((m, i) =>yscale(d.min[i]))(d.x)
+                .y1((m, i) => yscale(d.min[i]))(d.x)
         })
         .attr("fill", d => (d.fill ? d.fill : "#555"))
         .attr("stroke", d => (d.stroke ? d.stroke : "none"))
@@ -202,6 +202,7 @@ function plotRect(g, S) {
                     "w": xscale(d.width[i]) - xscale(0) + (d.dw ? d.dw[i] : 0),
                     "h": yscale(0) - yscale(d.height[i]) + (d.dh ? d.dh[i] : 0),
                     "fill": (d.fill ? (Array.isArray(d.fill) ? d.fill[i] : d.fill) : "#555"),
+                    "line": (d.line ? (Array.isArray(d.line) ? d.line[i] : d.line) : 1),
                     "stroke": (d.stroke ? (Array.isArray(d.stroke) ? d.stroke[i] : d.stroke) : null),
                     "opacity": (d.opacity ? (Array.isArray(d.opacity) ? d.opacity[i] : d.opacity) : null),
                     "dash": (d.dash ? (Array.isArray(d.dash) ? d.dash[i] : d.dash) : null),
@@ -216,6 +217,7 @@ function plotRect(g, S) {
             .attr("fill", d => d.fill)
             .attr("stroke", d => d.stroke)
             .attr("opacity", d => d.opacity)
+            .attr("stroke-width", d => d.line)
             .attr("stroke-dasharray", d => d.dash)
 }
 

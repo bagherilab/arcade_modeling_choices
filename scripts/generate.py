@@ -77,6 +77,64 @@ def get_colony_borders(D, T, N, outfile, code, timepoints=[], seeds=[]):
     header = "x,y,z,DIRECTION\n"
     save_csv(f"{outfile}{code}", header, list(zip(*out)), f".BORDERS")
 
+# FEATURE QUANTILES ============================================================
+
+def get_feature_quantiles(tar, timepoints, keys, outfile, code):
+    """Gets quantiles of volume and age across seeds."""
+    volumes = []
+    ages = []
+
+    for member in tar.getmembers():
+        json = load_json(member, tar=tar)
+
+        for timepoint in json["timepoints"]:
+            if timepoint["time"] in timepoints:
+                cells = [cell for tp, cells in timepoint["cells"] for cell in cells]
+                cells_excluded = [cell for cell in cells if cell[1] == 0]
+
+                volumes = volumes + [[timepoint["time"], cell[4]] for cell in cells_excluded]
+                ages = ages + [[timepoint["time"], cell[5]/60./24.] for cell in cells_excluded]
+
+    volumes_df = pd.DataFrame(volumes, columns=["time", "volume"])
+    ages_df = pd.DataFrame(ages, columns=["time", "age"])
+
+    out = { "AGES": [], "VOLUMES": [] }
+
+    for t, group in volumes_df.groupby("time"):
+        volume = group["volume"]
+        out["VOLUMES"].append({
+            "quantiles": [volume.quantile(q) for q in [0, 0.25, 0.5, 0.75, 1.0]],
+            "time": t
+        })
+
+    for t, group in ages_df.groupby("time"):
+        age = group["age"]
+        out["AGES"].append({
+            "quantiles": [age.quantile(q) for q in [0, 0.25, 0.5, 0.75, 1.0]],
+            "time": t
+        })
+
+    save_json(f"{outfile}{code}", out, ".QUANTILES")
+
+def merge_feature_quantiles(file, out, keys, extension, code, tar=None):
+    """Merge feature quantiles across conditions."""
+    code = code.replace("_CHX_", "_CH_")
+    filepath = f"{file}{code}{extension}.json"
+
+    if tar:
+        D = load_json(filepath.split("/")[-1], tar=tar)
+    else:
+        D = load_json(filepath)
+
+    keys["AGES"] = D["AGES"]
+    keys["VOLUMES"] = D["VOLUMES"]
+    keys.pop('time', None)
+    out['data'].append(keys)
+
+def save_feature_quantiles(file, extension, out):
+    """Save merged feature quantiles files."""
+    save_json(file, out, extension)
+
 # CONCENTRATION PROFILES =======================================================
 
 def make_concentration_profiles(tar, timepoints, keys, outfile, code):

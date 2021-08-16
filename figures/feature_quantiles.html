@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="css/style.css" />
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script type="text/javascript" src="js/browser.js"></script>
+        <script type="text/javascript" src="js/functions.js"></script>
+        <script type="text/javascript" src="js/utilities.js"></script>
+    </head>
+    <body>
+        <h1>feature quantiles</h1>
+        <div id="buttons">
+            <button id="generate">GENERATE</button>
+            <button id="save">SAVE</button>
+        </div>
+        <div id="options">
+            <div id="layout">
+                <strong>LAYOUT</strong>
+                <label class="inputs"><input type="radio" name="layout" id="layout_age">by age</label>
+                <label class="inputs"><input type="radio" name="layout" id="layout_volume">by volume</label>
+            </div>
+        </div>
+        <div id="canvas"></div>
+        <script>
+            var PREFIX = "feature_quantiles"
+            var SIZE = { "width": 400, "height": 400 }
+            var OPTIONS = [ "layout" ]
+            var SELECTED = {
+                "radios": {
+                    "layout": "age"
+                }
+            }
+            var LABELS = {
+                "context": {
+                    "C": "colony",
+                    "CH": "tissue",
+                },
+                "age": {
+                    "A0": "deterministic",
+                    "A1": "stochastic",
+                },
+                "volume": {
+                    "V0": "deterministic",
+                    "V1": "stochastic",
+                },
+            }
+
+            initialize()
+
+            var Y_AXIS = {
+                "age": {
+                    "bounds": [1, 8],
+                    "title": "Volume " + UNIT("10" + EXP(3) + " \u03BCm" + EXP(3)),
+                    "n": 8,
+                    "scale": 0.001, // um^3 => 10^3 um^3
+                    "padding": 0.5
+                },
+                "volume": {
+                    "bounds": [0, 12],
+                    "title": "Age " + UNIT("weeks"),
+                    "n": 5,
+                    "scale": 1/7,
+                    "padding": 1
+                }
+            }
+
+            function PROCESSOR() {
+                let selected = {
+                    "age": ["A0", "A1"],
+                    "volume": ["V0", "V1"],
+                    "context": ["C", "CH"],
+                }
+
+                let name = function(arr) {
+                    return "CELL_STOCHASTICITY/CELL_STOCHASTICITY.QUANTILES.json"
+                }
+
+                let layout = [SELECTED.radios.layout, "context"]
+                let make = processMake(layout, selected, [], name)
+                let p = processGrid(layout, selected, make)
+
+                return {
+                    "selected": selected,
+                    "layout": layout,
+                    "files": p.files,
+                    "margin": {
+                        "left": p.marginLeft,
+                        "top": p.marginTop,
+                        "right": 5,
+                        "bottom": 5,
+                        "axis": AXIS_PADDING
+                    },
+                    "cols": p.nCols,
+                    "rows": p.nRows,
+                    "axis": {
+                        "x": {
+                            "bounds": [0, 7],
+                            "title": "Time " + UNIT("days"),
+                            "n": 8,
+                            "padding": 0.75,
+                            "labels": (e => (e < 4 ? e : (e == 5 ? 7 : (e == 7 ? 14 : ""))))
+                        },
+                        "y": Y_AXIS[SELECTED.radios.layout],
+                    }
+                }
+            }
+
+            function PARSER(code, S, D) {
+                let feature = S.layout[0]
+                let field = (feature == "age" ? "volume" : "age")
+                let key = field.toUpperCase() + "S"
+                let context = S.selected.context[D.i[1]]
+                let value = S.selected[feature][D.i[0]]
+
+                let data = []
+
+                let d = D.data.data
+                    .filter(e => e[feature] == value)
+                    .filter(e => e.context == context)
+
+                let delta = 0.17
+                let padding = 0.05
+
+                let box = function(quantiles, index, color) {
+                    data.push({
+                        "*": "path",
+                        "x": [index, index],
+                        "y": [quantiles[0]*scale, quantiles[4]*scale],
+                        "stroke": color,
+                        "width": 1,
+                    })
+
+                    data.push({
+                        "*": "rect",
+                        "x": [index - delta],
+                        "y": [quantiles[3]*scale],
+                        "width": [delta*2],
+                        "height": [quantiles[3]*scale - quantiles[1]*scale],
+                        "fill": (color == "#222222" ? "#ffffff" : shadeColor(color,  0.6)),
+                        "stroke": (color == "#222222" ? color : "none"),
+                        "line": 0.5
+                    })
+
+                    data.push({
+                        "*": "path",
+                        "x": [index - delta, index + delta],
+                        "y": [quantiles[2]*scale, quantiles[2]*scale],
+                        "stroke": color,
+                        "width": 2
+                    })
+                }
+
+                let scale = S.axis.y.scale
+                let times = [1, 2, 3, 4, 8, 15]
+
+                times.map(function(time, i) {
+                    let offset = (time > 4 ? 1 : 0) + (time > 9 ? 1 : 0)
+                    let d0 = d[0][key].filter(e => e.time == time)[0]
+                    box(d0.quantiles, i - delta - padding + offset, "#222222")
+
+                    let d1 = d[1][key].filter(e => e.time == time)[0]
+                    box(d1.quantiles, i + delta + padding + offset, "#888888")
+                })
+
+                return { "data": [{ "id": "X", "x": 0, "y": 0, "data": data }], "rows": 1, "cols": 1 }
+            }
+
+            function LABELLER(S, P) { return labelGrid(S, P) }
+
+            function DECORATOR(g, S, i, p) {
+                decorateTicks(g, S, i, p)
+
+                if (S.layout[0] == "age") {
+                    let gg = g.insert("g",":first-child")
+                    let v0 = 2250*S.axis.y.scale
+                    addLine(gg, 0, S.subpanel.w, S.yscale(v0), S.yscale(v0), "#ccc", 0.5)
+                    addLine(gg, 0, S.subpanel.w, S.yscale(2*v0), S.yscale(2*v0), "#ccc", 0.5)
+                        .attr("stroke-dasharray", "2,2")
+                } else {
+                    let gg = g.insert("g",":first-child")
+                    let a0 = 12*7*S.axis.y.scale
+                    addLine(gg, 0, S.subpanel.w, S.yscale(0), S.yscale(0), "#ccc", 0.5)
+                    addLine(gg, 0, S.subpanel.w, S.yscale(a0), S.yscale(a0), "#ccc", 0.5)
+                        .attr("stroke-dasharray", "2,2")
+                }
+
+                let breaks = [4, 6]
+                let size = FONT_SIZE/2
+
+                let dx = alignHorzAxis(S, i)
+                let dy = alignVertAxis(S, i) + S.subpanel.h - size
+                let G = S.G.append("g")
+                    .attr("id", "ticks")
+                    .attr("transform", "translate(" + dx + "," + dy + ")")
+
+                breaks.map(function(b) {
+                    // Cover extra tick marks.
+                    G.append("rect")
+                        .attr("width", size)
+                        .attr("height", 2*size)
+                        .attr("x", S.xscale(b) - size/2)
+                        .attr("fill", "#fff")
+
+                    // Add axis breaks
+                    G.append("path")
+                        .attr("transform", "translate(" + S.xscale(b) + ",0)")
+                        .attr("d", "m 0,0 l -" + size + "," + 2*size
+                            + "m " + size + ",0 l " + size + ",-" + 2*size)
+                        .attr("stroke", "#aaa")
+                        .attr("stroke-width", 0.5)
+                })
+            }
+        </script>
+    </body>
+</html>

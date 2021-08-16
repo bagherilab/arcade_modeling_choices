@@ -28,6 +28,9 @@ var AXIS_PADDING = {
     "right": 0
 }
 
+var EXP = function(e) {
+  return '<tspan baseline-shift="super" font-size="70%">' + e + '</tspan>'
+}
 
 var UNIT = function(e) {
     return '<tspan font-weight="normal" font-size="' + (FONT_SIZE - 2) + 'pt">(' + e + ')</tspan>'
