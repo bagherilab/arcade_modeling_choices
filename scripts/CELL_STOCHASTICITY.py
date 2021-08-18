@@ -65,3 +65,20 @@ class CELL_STOCHASTICITY():
                         func1(outfile, out, key, extension, code, tar=tar)
 
         func2(outfile, extension, out)
+
+    @staticmethod
+    def get(output_path, func1, func2, extension, name=NAME,
+             contexts=CONTEXTS, volumes=VOLUMES, ages=AGES,
+             timepoint=0):
+        outfile = f"{output_path}{name}/{name}"
+        out = []
+        tar = load_tar(outfile, extension)
+
+        for context, suffix, exclude in contexts:
+            for volume in volumes:
+                for age in ages:
+                    code = f"_{context}{suffix}_{age}_{volume}"
+                    key = { "time": timepoint, "context": context, "age": age, "volume": volume }
+                    func1(outfile, out, key, extension, code, tar=tar)
+
+        return func2(out)

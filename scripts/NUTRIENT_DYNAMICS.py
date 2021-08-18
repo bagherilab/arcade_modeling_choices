@@ -65,3 +65,20 @@ class NUTRIENT_DYNAMICS():
                         func1(outfile, out, key, extension, code, tar=tar)
 
         func2(outfile, extension, out)
+
+    @staticmethod
+    def get(output_path, func1, func2, extension, name=NAME,
+             contexts=CONTEXTS, levels=LEVELS, profiles=PROFILES,
+             timepoint=0):
+        outfile = f"{output_path}{name}/{name}"
+        out = []
+        tar = load_tar(outfile, extension)
+
+        for context, suffix, exclude in contexts:
+            for level in levels:
+                for profile in profiles:
+                    code = f"_{context}{suffix}_{level}_{profile}"
+                    key = { "time": timepoint, "context": context, "level": level, "profile": profile }
+                    func1(outfile, out, key, extension, code, tar=tar)
+
+        return func2(out)
