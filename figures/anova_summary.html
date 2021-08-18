@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="css/style.css" />
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script type="text/javascript" src="js/browser.js"></script>
+        <script type="text/javascript" src="js/functions.js"></script>
+        <script type="text/javascript" src="js/utilities.js"></script>
+    </head>
+    <body>
+        <h1>anova testing</h1>
+        <div id="buttons">
+            <button id="generate">GENERATE</button>
+            <button id="save">SAVE</button>
+        </div>
+        <div id="options">
+            <div id="simulations">
+                <strong>SIMULATION SET</strong>
+                <label class="inputs"><input type="radio" name="simulation" id="simulation_SYSTEM_REPRESENTATION">SYSTEM REPRESENTATION</label>
+                <label class="inputs"><input type="radio" name="simulation" id="simulation_CELL_STOCHASTICITY">CELL STOCHASTICITY</label>
+                <label class="inputs"><input type="radio" name="simulation" id="simulation_NUTRIENT_DYNAMICS">NUTRIENT DYNAMICS</label>
+            </div>
+            <div id="metrics">
+                <strong>METRIC</strong>
+                <label class="inputs"><input type="radio" name="metric" id="metric_GROWTH">growth rate</label>
+                <label class="inputs"><input type="radio" name="metric" id="metric_SYMMETRY">symmetry</label>
+                <label class="inputs"><input type="radio" name="metric" id="metric_CYCLES">cycle length</label>
+            </div>
+        </div>
+        <div id="canvas"></div>
+        <script>
+            var PREFIX = "anova_testing"
+            var SIZE = { "width": 400, "height": 400 }
+            var OPTIONS = [ "simulations", "metrics" ]
+            var SELECTED = {
+                "radios": {
+                    "simulation": "SYSTEM_REPRESENTATION",
+                    "metric": "GROWTH",
+                }
+            }
+            var LABELS = {
+                "factors": {
+                    "geometry": "DIMENSION",
+                    "dimension": "GEOMETRY",
+                    "volume": "AGE",
+                    "age": "VOLUME",
+                    "level": "PROFILE",
+                    "profile": "LEVEL",
+                },
+                "context": {
+                    "C": "colony",
+                    "CH": "tissue",
+                },
+                "geometry": {
+                    "rect": "rectangular",
+                    "hex": "hexagonal",
+                },
+                "dimension": {
+                    "2D": "2D",
+                    "3DC": "3D*",
+                    "3D": "3D",
+                },
+                "age": {
+                    "A0": "deterministic",
+                    "A1": "stochastic",
+                },
+                "volume": {
+                    "V0": "deterministic",
+                    "V1": "stochastic",
+                },
+                "profile": {
+                    "constant": "constant",
+                    "pulse": "pulse",
+                    "cycle": "cycle",
+                },
+                "level": {
+                    "LOW": "LOW",
+                    "BASAL": "BASAL",
+                    "HIGH": "HIGH",
+                },
+            }
+
+            var FACTORS = {
+                "SYSTEM_REPRESENTATION": ["dimension", "geometry"],
+                "CELL_STOCHASTICITY": ["volume", "age"],
+                "NUTRIENT_DYNAMICS": ["profile", "level"],
+            }
+
+            var LEVELS = {
+                "geometry": ["rect", "hex"],
+                "dimension": ["2D", "3DC", "3D"],
+                "age": ["A0", "A1"],
+                "volume": ["V0", "V1"],
+                "profile": ["constant", "cycle"],
+                "level": ["LOW", "BASAL", "HIGH"],
+            }
+
+            initialize()
+
+            var Y_AXIS = {
+                "GROWTH": {
+                    "bounds": [0, 60], // mm/day
+                    "title": "Growth Rate " + UNIT("\u03BCm/day"),
+                    "n": 3,
+                    "padding": 10
+                },
+                "SYMMETRY": {
+                    "bounds": [0.4, 0.9], // unitless
+                    "title": 'Symmetry',
+                    "n": 6,
+                    "padding": 0.05
+                },
+                "CYCLES": {
+                    "bounds": [14, 30], // hours
+                    "title": "Cycle Length " + UNIT("hours"),
+                    "n": 3,
+                    "padding": 1
+                },
+            }
+
+            function PROCESSOR() {
+                let simulation = SELECTED.radios.simulation
+                let metric = SELECTED.radios.metric
+                let factors = FACTORS[simulation]
+
+                let selected = {
+                    "simulation": simulation,
+                    "metric": metric,
+                    "context": ["C", "CH"],
+                    "factors": factors,
+                    "a": LEVELS[factors[0]],
+                    "b": LEVELS[factors[1]]
+                }
+
+                let name = function(arr) {
+                    return "_/ANOVA_cell_means.csv~_/ANOVA_testing.json";
+                }
+
+                let layout = ["factors", "context"]
+                let make = processMake(layout, selected, [0, 1], name)
+                let p = processGrid(layout, selected, make)
+
+                let X_AXIS = function(index) {
+                    let factor = FACTORS[simulation]["ba".indexOf(index)]
+                    let levels = LEVELS[factor]
+                    return {
+                        "bounds": [0, levels.length - 1],
+                        "n": levels.length,
+                        "labels": (i => LABELS[factor][levels[i]]),
+                        "padding": 0.3
+                    }
+                }
+
+                return {
+                    "selected": selected,
+                    "layout": layout,
+                    "files": p.files,
+                    "margin": {
+                        "left": p.marginLeft,
+                        "top": p.marginTop,
+                        "right": 5,
+                        "bottom": 5,
+                        "axis": AXIS_PADDING
+                    },
+                    "cols": p.nCols,
+                    "rows": p.nRows,
+                    "axis": {
+                        "keys": ["a", "b"],
+                        "x": X_AXIS,
+                        "y": Y_AXIS[metric],
+                    }
+                }
+            }
+
+            function PARSER(code, S, D) {
+                let simulation = S.selected.simulation.split("_").map(e => e[0]).reduce((a, b) => a + b)
+                let metric = S.selected.metric
+                let context = S.selected.context[D.i[1]]
+                let data = []
+
+                let d = D.data1
+                    .filter(e => e.simulation == simulation)
+                    .filter(e => e.metric == metric)
+                    .filter(e => e.context == context)
+
+                let group = (D.i[0] == 0 ? "a" : "b")
+                let levels = S.selected[group]
+
+                let index = (D.i[0] == 1 ? "a" : "b")
+                let positions = S.selected[index]
+                let style = FACTORS[S.selected.simulation]["ba".indexOf(index)]
+
+                let widths = {
+                    "dimension": {
+                        "2D": 1.5,
+                        "3D": 1.5,
+                        "3DC": 1
+                    },
+                    "geometry": {
+                        "rect": 1,
+                        "hex": 1,
+                    },
+                    "age": {
+                        "A0": 0.5,
+                        "A1": 1,
+                    },
+                    "volume": {
+                        "V0": 0.5,
+                        "V1": 1,
+                    },
+                    "profile": {
+                        "constant": 0.5,
+                        "pulse": 1,
+                        "cycle": 1,
+                    },
+                    "level": {
+                        "LOW": 1,
+                        "BASAL": 1,
+                        "HIGH": 1,
+                    }
+                }
+
+                let strokes = {
+                    "dimension": {
+                        "2D": "#555",
+                        "3D": "#555",
+                        "3DC": "#555",
+                    },
+                    "geometry": {
+                        "rect": "#555",
+                        "hex": "#222",
+                    },
+                    "age": {
+                        "A0": "#555",
+                        "A1": "#222",
+                    },
+                    "volume": {
+                        "V0": "#555",
+                        "V1": "#222",
+                    },
+                    "profile": {
+                        "constant": "#888",
+                        "pulse": "#555",
+                        "cycle": "#222",
+                    },
+                    "level": {
+                        "LOW": "#888",
+                        "BASAL": "#555",
+                        "HIGH": "#222",
+                    },
+                }
+
+                let dashes = {
+                    "dimension": {
+                        "2D": "2,2",
+                        "3D": null,
+                        "3DC": null
+                    },
+                    "geometry": {
+                        "rect": null,
+                        "hex": null,
+                    },
+                    "age": {
+                        "A0": null,
+                        "A1": "2,2",
+                    },
+                    "volume": {
+                        "V0": null,
+                        "V1": "2,2",
+                    },
+                    "profile": {
+                        "constant": null,
+                        "pulse": "3,1",
+                        "cycle": "2,2",
+                    },
+                    "level": {
+                        "LOW": null,
+                        "BASAL": null,
+                        "HIGH": null,
+                    },
+                }
+
+                levels.map(function(level) {
+                    let df = d
+                        .filter(e => e["factor_" + group] == level)
+                        .filter(e => contains(e["factor_" + index], positions))
+
+                    let coords = df
+                      .map(e => [positions.indexOf(e["factor_" + index]), Number(e.mean), Number(e.std)])
+                      .sort((a, b) => (a[0] - b[0]))
+
+                    let y = coords.map(e => e[1])
+                    let x = coords.map(e => e[0])
+
+                    coords.map(function(e, i) {
+                        data.push({
+                            "*": "path",
+                            "xscale": group,
+                            "x": [i, i],
+                            "y": [y[i] - e[2], y[i] + e[2]],
+                            "stroke": strokes[style][level],
+                            "width": 0.5
+                        })
+                    })
+
+                    data.push({
+                        "*": "circle",
+                        "xscale": group,
+                        "x": x,
+                        "y": y,
+                        "r": 2,
+                        "fill": strokes[style][level],
+                    })
+
+                    data.push({
+                        "*": "path",
+                        "xscale": group,
+                        "x": x,
+                        "y": y,
+                        "stroke": strokes[style][level],
+                        "width": widths[style][level],
+                        "dash": dashes[style][level],
+                    })
+                })
+
+                return { "data": [{
+                  "id": "X", "x": 0, "y": 0, "data": data,
+                  "anova": D.data2[simulation + "_" + metric + "_" + context]
+                }], "rows": 1, "cols": 1 }
+            }
+
+            function LABELLER(S, P) { return labelGrid(S, P) }
+
+            function DECORATOR(g, S, i, p) {
+                addBorder(g, S.subpanel.w, S.subpanel.h, "#ccc")
+
+                // Create and align groups for ticks.
+                let dx = alignHorzAxis(S, i)
+                let dy = alignVertAxis(S, i)
+
+                // Create group to hold ticks.
+                let G = S.G.append("g")
+                    .attr("id", "ticks")
+                    .attr("transform", "translate(" + dx + "," + dy + ")")
+
+                let A = S.axis
+                let factor = (i[0] == 0 ? "a" : "b")
+
+                // Create ticks.
+                let ticks = []
+                if (i[1] == 1) { ticks.push(makeHorzTicks(S, 0, S.subpanel.h, A.x(factor))) }
+                if (i[0] == 0) { ticks.push(makeVertTicks(S, 0, 0, A.y)) }
+
+                // Create axis labels.
+                let labels = []
+                if (i[0] == 0) { labels.push(makeVertLabel(S.subpanel.h, alignVertText(S), 0, A.y.title, "none")) }
+
+                addTicks(G, ticks)
+                addLabels(G, labels)
+
+                // ANOVA result indicators.
+                if (i[0] == 0) {
+                    let gg = S.G
+                        .insert("g",":first-child")
+                        .attr("transform", "translate(" + dx + "," + dy + ")")
+
+                    let anova = p.anova
+                    let interaction = anova["anova_int"]["is_significant"]["X1:X2"]
+
+                    if (interaction) {
+                        let simple = anova["simple_main"]
+
+                        gg.append("rect")
+                            .attr("x", S.subpanel.w + 5)
+                            .attr("width", 10)
+                            .attr("height", S.subpanel.h)
+                            .attr("fill", "#999")
+
+                        S.selected.b.map(function(b, i) {
+                            gg.append("rect")
+                                .attr("x", S.xscale["a"](i) - 5)
+                                .attr("width", 10)
+                                .attr("height", S.subpanel.h)
+                                .attr("fill", (simple["X1"]["is_significant"][b] ? "#ddd" : "none"))
+                        })
+
+                        S.selected.a.map(function(a, i) {
+                            gg.append("rect")
+                                .attr("x", S.panel.dw + S.xscale["b"](i) - 5)
+                                .attr("width", 10)
+                                .attr("height", S.subpanel.h)
+                                .attr("fill", (simple["X2"]["is_significant"][a] ? "#ddd" : "none"))
+                        })
+                    } else {
+                        let noint = anova["anova_noint"]
+
+                        gg.append("rect")
+                            .attr("y", 5)
+                            .attr("x", 5)
+                            .attr("width", S.subpanel.w - 10)
+                            .attr("height", 10)
+                            .attr("fill", (noint["is_significant"]["X1"] ? "#555" : "none"))
+
+                        gg.append("rect")
+                            .attr("y", 5)
+                            .attr("x", S.panel.dw + 5)
+                            .attr("width", S.subpanel.w - 10)
+                            .attr("height", 10)
+                            .attr("fill", (noint["is_significant"]["X2"] ? "#555" : "none"))
+                    }
+                }
+            }
+        </script>
+    </body>
+</html>

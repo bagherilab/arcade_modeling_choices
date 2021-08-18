@@ -166,8 +166,8 @@ function plotCircle(g, S) {
     let R = Math.min(5, Math.max(2, Math.min(S.subpanel.dw, S.subpanel.dh)/100))
     g.selectAll("circle")
         .data(function(d) {
-            let xscale = (d.scale ? S.xscale[d.scale.x] : S.xscale)
-            let yscale = (d.scale ? S.yscale[d.scale.y] : S.yscale)
+            let xscale = (d.xscale ? S.xscale[d.xscale] : S.xscale)
+            let yscale = (d.yscale ? S.yscale[d.yscale] : S.yscale)
 
             return d.x.map(function(e, i) {
                 return {
