@@ -20,7 +20,7 @@ def merge_metrics(file, out, keys, extension, code, tar=None):
     # Check for special case of 3D simulations.
     if "dimension" in keys and keys["dimension"] == "3D":
         layer_tar = load_tar(file, ".LAYERS")
-        layer_filepath = filepath.replace("METRICS", "LAYERS")
+        layer_filepath = filepath.replace("METRICS", "LAYERS.METRICS")
 
         if tar:
             D = load_json(layer_filepath.split("/")[-1], tar=layer_tar)
@@ -40,27 +40,51 @@ def save_metrics(file, extension, out):
 
 # CENTER LAYERS ================================================================
 
-def get_center_layers(D, T, N, outfile, code, timepoints=[], seeds=[]):
+def get_center_layers_metrics(D, T, N, outfile, code, timepoints=[], seeds=[]):
     """Analyze results for metrics across time for center layer only"""
 
     # Filter dataframe for center layer.
     d = D[D.z == 0]
 
     cycles = get_temporal_cycles(d, T, N)
-    save_center_layers(cycles, T, f"{outfile}{code}", ".LAYERS.CYCLES")
+    save_center_layers_metrics(cycles, T, f"{outfile}{code}", ".LAYERS.METRICS.CYCLES")
 
     index = T.index(2.0)
     growth = get_temporal_growths(d, T[index:], N)
     nan_growth = [np.nan] * (index + 2)
-    save_center_layers([nan_growth + grow for grow in growth], T, f"{outfile}{code}", ".LAYERS.GROWTH")
+    save_center_layers_metrics([nan_growth + grow for grow in growth], T, f"{outfile}{code}", ".LAYERS.METRICS.GROWTH")
 
     symmetry = get_temporal_symmetries(d, T, N)
-    save_center_layers(symmetry, T, f"{outfile}{code}", ".LAYERS.SYMMETRY")
+    save_center_layers_metrics(symmetry, T, f"{outfile}{code}", ".LAYERS.METRICS.SYMMETRY")
 
-def save_center_layers(data, T, filename, extension):
+def save_center_layers_metrics(data, T, filename, extension):
     """Save analysis from metrics analysis excluding nans."""
     out = calculate_nan_statistics(data)
     out['_X'] = T
+    save_json(filename, out, extension)
+
+def get_center_layer_seeds(D, T, N, outfile, code, timepoints=[], seeds=[]):
+    """Analyze results for metrics grouped by seed for center layer only."""
+
+    # Filter dataframe for center layer.
+    d = D[D.z == 0]
+
+    cycles = get_temporal_cycles(d, timepoints, N)
+    save_center_layer_seeds(cycles, timepoints, f"{outfile}{code}", ".LAYERS.SEEDS.CYCLES")
+
+    index = T.index(2.0)
+    growth = get_temporal_growths(d, T[index:], N)
+    growth = [[np.nan] * (index + 2) + grow for grow in growth]
+    indices = [T.index(t) for t in timepoints]
+    growth = np.array(growth)[:,indices]
+    save_center_layer_seeds(growth, timepoints, outfile + code, ".LAYERS.SEEDS.GROWTH")
+
+    symmetry = get_temporal_symmetries(d, timepoints, N)
+    save_center_layer_seeds(symmetry, timepoints, f"{outfile}{code}", ".LAYERS.SEEDS.SYMMETRY")
+
+def save_center_layer_seeds(data, T, filename, extension):
+    """Save analysis from seeds analysis."""
+    out = [{ "_": [x[i] for x in data], "time": t } for i, t in enumerate(T)]
     save_json(filename, out, extension)
 
 # COLONY BORDERS ===============================================================
