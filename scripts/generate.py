@@ -104,9 +104,8 @@ def get_colony_borders(D, T, N, outfile, code, timepoints=[], seeds=[]):
 # FEATURE QUANTILES ============================================================
 
 def get_feature_quantiles(tar, timepoints, keys, outfile, code):
-    """Gets quantiles of volume and age across seeds."""
-    volumes = []
-    ages = []
+    """Gets volume and age features across seeds."""
+    features = []
 
     for member in tar.getmembers():
         json = load_json(member, tar=tar)
@@ -116,47 +115,53 @@ def get_feature_quantiles(tar, timepoints, keys, outfile, code):
                 cells = [cell for tp, cells in timepoint["cells"] for cell in cells]
                 cells_excluded = [cell for cell in cells if cell[1] == 0]
 
-                volumes = volumes + [[timepoint["time"], cell[4]] for cell in cells_excluded]
-                ages = ages + [[timepoint["time"], cell[5]/60./24.] for cell in cells_excluded]
+                features = features + [[timepoint["time"], cell[4], cell[5]] for cell in cells_excluded]
 
-    volumes_df = pd.DataFrame(volumes, columns=["time", "volume"])
-    ages_df = pd.DataFrame(ages, columns=["time", "age"])
-
-    out = { "AGES": [], "VOLUMES": [] }
-
-    for t, group in volumes_df.groupby("time"):
-        volume = group["volume"]
-        out["VOLUMES"].append({
-            "quantiles": [volume.quantile(q) for q in [0, 0.25, 0.5, 0.75, 1.0]],
-            "time": t
-        })
-
-    for t, group in ages_df.groupby("time"):
-        age = group["age"]
-        out["AGES"].append({
-            "quantiles": [age.quantile(q) for q in [0, 0.25, 0.5, 0.75, 1.0]],
-            "time": t
-        })
-
-    save_json(f"{outfile}{code}", out, ".QUANTILES")
+    header = "time,volume,age\n"
+    save_csv(f"{outfile}{code}", header, list(zip(*features)), f".QUANTILES")
 
 def merge_feature_quantiles(file, out, keys, extension, code, tar=None):
-    """Merge feature quantiles across conditions."""
+    """Merge volume and age features across conditions."""
     code = code.replace("_CHX_", "_CH_")
-    filepath = f"{file}{code}{extension}.json"
+    filepath = f"{file}{code}{extension}.csv"
 
     if tar:
-        D = load_json(filepath.split("/")[-1], tar=tar)
+        D = load_csv(filepath.split("/")[-1], tar=tar)
     else:
-        D = load_json(filepath)
+        D = load_csv(filepath)
 
-    keys["AGES"] = D["AGES"]
-    keys["VOLUMES"] = D["VOLUMES"]
-    keys.pop('time', None)
-    out['data'].append(keys)
+    rows = [[keys["context"], keys["age"], keys["volume"]] + d for d in D[1:]]
+    out['data'] = out["data"] + rows
 
 def save_feature_quantiles(file, extension, out):
-    """Save merged feature quantiles files."""
+    """Calculate quantiles and save merged quantiles file."""
+    columns = ["context", "age_code", "volume_code", "time", "volume", "age"]
+    df = pd.DataFrame(out["data"], columns=columns)
+
+    out = { "AGE": [], "VOLUME": [] }
+
+    for name, group in df.groupby(["context", "volume_code", "time"]):
+        context, volume_code, time = name
+        volume = group["volume"].astype("float")
+
+        out["VOLUME"].append({
+            "context": context,
+            "volume": volume_code,
+            "time": float(time),
+            "quantiles": [volume.quantile(q) for q in [0, 0.25, 0.5, 0.75, 1.0]],
+        })
+
+    for name, group in df.groupby(["context", "age_code", "time"]):
+        context, age_code, time = name
+        age = group["age"].astype("float")/60./24.
+
+        out["AGE"].append({
+            "context": context,
+            "age": age_code,
+            "time": float(time),
+            "quantiles": [age.quantile(q) for q in [0, 0.25, 0.5, 0.75, 1.0]],
+        })
+
     save_json(file, out, extension)
 
 # CONCENTRATION PROFILES =======================================================

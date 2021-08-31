@@ -17,18 +17,18 @@
         <div id="options">
             <div id="layout">
                 <strong>LAYOUT</strong>
-                <label class="inputs"><input type="radio" name="layout" id="layout_age">by age</label>
-                <label class="inputs"><input type="radio" name="layout" id="layout_volume">by volume</label>
+                <label class="inputs"><input type="radio" name="layout" id="layout_volume">volume</label>
+                <label class="inputs"><input type="radio" name="layout" id="layout_age">age</label>
             </div>
         </div>
         <div id="canvas"></div>
         <script>
             var PREFIX = "feature_quantiles"
-            var SIZE = { "width": 400, "height": 400 }
+            var SIZE = { "width": 309, "height": 293 }
             var OPTIONS = [ "layout" ]
             var SELECTED = {
                 "radios": {
-                    "layout": "age"
+                    "layout": "volume"
                 }
             }
             var LABELS = {
@@ -49,14 +49,14 @@
             initialize()
 
             var Y_AXIS = {
-                "age": {
-                    "bounds": [1, 8],
-                    "title": "Volume " + UNIT("10" + EXP(3) + " \u03BCm" + EXP(3)),
-                    "n": 8,
-                    "scale": 0.001, // um^3 => 10^3 um^3
-                    "padding": 0.5
-                },
                 "volume": {
+                    "bounds": [1, 9],
+                    "title": "Volume " + UNIT("10" + EXP(3) + " \u03BCm" + EXP(3)),
+                    "n": 5,
+                    "scale": 0.001, // um^3 => 10^3 um^3
+                    "padding": 0.25
+                },
+                "age": {
                     "bounds": [0, 12],
                     "title": "Age " + UNIT("weeks"),
                     "n": 5,
@@ -108,26 +108,29 @@
 
             function PARSER(code, S, D) {
                 let feature = S.layout[0]
-                let field = (feature == "age" ? "volume" : "age")
-                let key = field.toUpperCase() + "S"
+                let key = feature.toUpperCase()
                 let context = S.selected.context[D.i[1]]
                 let value = S.selected[feature][D.i[0]]
 
                 let data = []
 
-                let d = D.data.data
+                let d = D.data[key]
                     .filter(e => e[feature] == value)
                     .filter(e => e.context == context)
 
-                let delta = 0.17
-                let padding = 0.05
+                let scale = S.axis.y.scale
+                let delta = 0.3
 
-                let box = function(quantiles, index, color) {
+                d.map(function(dd) {
+                    index = dd["time"] - 1
+                    index = (index == 7 ? 5 : (index == 14 ? 7 : index))
+                    quantiles = dd["quantiles"]
+
                     data.push({
                         "*": "path",
                         "x": [index, index],
                         "y": [quantiles[0]*scale, quantiles[4]*scale],
-                        "stroke": color,
+                        "stroke": "#aaa",
                         "width": 1,
                     })
 
@@ -137,30 +140,16 @@
                         "y": [quantiles[3]*scale],
                         "width": [delta*2],
                         "height": [quantiles[3]*scale - quantiles[1]*scale],
-                        "fill": (color == "#222222" ? "#ffffff" : shadeColor(color,  0.6)),
-                        "stroke": (color == "#222222" ? color : "none"),
-                        "line": 0.5
+                        "fill": "#aaa"
                     })
 
                     data.push({
                         "*": "path",
                         "x": [index - delta, index + delta],
                         "y": [quantiles[2]*scale, quantiles[2]*scale],
-                        "stroke": color,
+                        "stroke": "#333",
                         "width": 2
                     })
-                }
-
-                let scale = S.axis.y.scale
-                let times = [1, 2, 3, 4, 8, 15]
-
-                times.map(function(time, i) {
-                    let offset = (time > 4 ? 1 : 0) + (time > 9 ? 1 : 0)
-                    let d0 = d[0][key].filter(e => e.time == time)[0]
-                    box(d0.quantiles, i - delta - padding + offset, "#222222")
-
-                    let d1 = d[1][key].filter(e => e.time == time)[0]
-                    box(d1.quantiles, i + delta + padding + offset, "#888888")
                 })
 
                 return { "data": [{ "id": "X", "x": 0, "y": 0, "data": data }], "rows": 1, "cols": 1 }
@@ -171,7 +160,7 @@
             function DECORATOR(g, S, i, p) {
                 decorateTicks(g, S, i, p)
 
-                if (S.layout[0] == "age") {
+                if (S.layout[0] == "volume") {
                     let gg = g.insert("g",":first-child")
                     let v0 = 2250*S.axis.y.scale
                     addLine(gg, 0, S.subpanel.w, S.yscale(v0), S.yscale(v0), "#ccc", 0.5)
