@@ -17,7 +17,7 @@
         <div id="canvas"></div>
         <script>
             var PREFIX = "colony_outlines"
-            var SIZE = { "width": 700, "height": 400 }
+            var SIZE = { "width": 464, "height": 255 }
             var OPTIONS = [ ]
             var SELECTED = { }
             var LABELS = {
@@ -37,18 +37,18 @@
             function PROCESSOR() {
                 let selected = {
                     "context": ["C", "CHX"],
-                    "geometry": ["hex", "rect"],
+                    "geometry": ["rect", "hex"],
                     "x": [""],
                 }
 
                 let name = function(arr) {
                     return "SYSTEM_REPRESENTATION/SYSTEM_REPRESENTATION_"
-                        + arr[1] + "_3D_" + arr[3] + ".BORDERS.csv"
+                        + arr[3] + "_3D_" + arr[1] + ".BORDERS.csv"
                         + "~SYSTEM_REPRESENTATION/SYSTEM_REPRESENTATION_"
-                        + arr[1] + "_2D_" + arr[3] + ".BORDERS.csv"
+                        + arr[3] + "_2D_" + arr[1] + ".BORDERS.csv"
                 }
 
-                let layout = ["x", "context", "x", "geometry"]
+                let layout = ["x", "geometry", "x", "context"]
                 let make = processMake(layout, selected, [0, 1, 2, 3], name)
                 let p = processGrid(layout, selected, make)
 
@@ -66,14 +66,14 @@
                     "cols": p.nCols,
                     "rows": p.nRows,
                     "axis": {
-                        "x": { "bounds": [0, 12] },
-                        "y": { "bounds": [0, 12] },
+                        "x": { "bounds": [0, 11] },
+                        "y": { "bounds": [0, 11] },
                     }
                 }
             }
 
             function PARSER(code, S, D) {
-                let geometry = D.i[3] == 0 ? "hex" : "rect"
+                let geometry = D.i[1] == 1 ? "hex" : "rect"
                 let z_coordinates = [-15, -10, -5, 0, 5, 10, 15]
                 let data = []
 
@@ -134,15 +134,13 @@
                         .attr("font-size", (FONT_SIZE - 2) + "pt")
                         .attr("font-family", "Helvetica")
                         .attr("text-anchor", "middle")
-                        .attr("font-style", "italic")
                         .attr("fill", color)
                         .attr("x", 3*S.subpanel.dw + S.subpanel.w/2)
                         .attr("y", 0)
 
-                    let padding = 10
-                    let above = 4*S.subpanel.dw - padding
-                    let below = 3*S.subpanel.dw - SUBPANEL_PADDING + padding
-                    let delta = S.subpanel.dw*3 - SUBPANEL_PADDING - 10 + padding
+                    let above = 4*S.subpanel.dw
+                    let below = 3*S.subpanel.dw - SUBPANEL_PADDING
+                    let delta = S.subpanel.dw*3 - SUBPANEL_PADDING - 20
 
                     gg.append("path")
                         .attr("d", "m " + above + ",-4 l " + delta + ",0")
