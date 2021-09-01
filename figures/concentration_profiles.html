@@ -17,7 +17,7 @@
         <div id="canvas"></div>
         <script>
             var PREFIX = "concentration_profiles"
-            var SIZE = { "width": 600, "height": 300 }
+            var SIZE = { "width": 542, "height": 268 }
             var OPTIONS = [ ]
             var SELECTED = { }
             var LABELS = {
@@ -74,7 +74,7 @@
                     "rows": p.nRows,
                     "axis": {
                         "y": {
-                            "bounds": [-11, 0],
+                            "bounds": [-8, 0],
                             "n": 12,
                             "padding": 0.5
                         },
@@ -83,6 +83,7 @@
                             "n": 16,
                             "padding": 0.5,
                             "title": "Time " + UNIT("days"),
+                            "labels": (e => e - 1),
                             "scale": 1
                         }
                     }
@@ -90,8 +91,8 @@
             }
 
             function PARSER(code, S, D) {
-                let grid_color = "#ddd"
-                let ref_color = "#aaa"
+                let grid_color = "#eee"
+                let ref_color = "#ddd"
                 let SMOOTHING_FACTOR = 15
                 let data = []
 
@@ -100,7 +101,23 @@
                 for (i = 0; i < 16; i++) {
                     data.push({
                         "*": "path",
-                        "y": [0, -11],
+                        "y": [0, -2],
+                        "x": [i, i],
+                        "stroke": grid_color,
+                        "width": (i == 1 ? 1.5 : 0.5)
+                    })
+
+                    data.push({
+                        "*": "path",
+                        "y": [-3, -5],
+                        "x": [i, i],
+                        "stroke": grid_color,
+                        "width": (i == 1 ? 1.5 : 0.5)
+                    })
+
+                    data.push({
+                        "*": "path",
+                        "y": [-6, -8],
                         "x": [i, i],
                         "stroke": grid_color,
                         "width": (i == 1 ? 1.5 : 0.5)
@@ -112,50 +129,52 @@
                 let levels = S.selected.level
 
                 profiles.map(function(profile, iProfile) {
-                    let offset = iProfile*4
+                    let offset = iProfile*3
 
-                    data.push({
-                        "*": "path",
-                        "y": [-offset, -offset],
-                        "x": [0, 15],
-                        "stroke": grid_color,
-                        "width": 0.5
-                    })
-
-                    if (profile == "cycle") {
-                        let x0 = linrange(0, 15*24*60)
-                        let y0 = x0.map(function(tick) {
-                            let x = tick/60.0/24.0*3
-                            return (Math.tanh((x - Math.floor(x) - 0.5)*SMOOTHING_FACTOR))/
-                                (2*Math.tanh(0.5*SMOOTHING_FACTOR)) + Math.floor(x) + 1.5 - x
-                        })
-
+                    for (let i = 0; i < 3; i++) {
                         data.push({
                             "*": "path",
-                            "y": y0.map(e => 0.5*(e - 1) - offset),
-                            "x": x0.map(e => e/60.0/24.0),
-                            "stroke": ref_color
-                        })
-                    } else if (profile == "pulse") {
-                        let times = [0, 2, 4, 6, 8, 10, 12, 14]
-                        times.map(function(t) {
-                            data.push({
-                                "*": "rect",
-                                "y": [-offset + 0.25],
-                                "x": [t - 0.05],
-                                "width": [0.1],
-                                "height": [0.5],
-                                "fill": ref_color
-                            })
-                        })
-                    } else if (profile == "constant") {
-                        data.push({
-                            "*": "path",
-                            "y": [-offset, -offset],
+                            "y": [-offset - i, -offset -i],
                             "x": [0, 15],
-                            "stroke": ref_color,
-                            "width": 2
+                            "stroke": grid_color,
+                            "width": 0.5
                         })
+
+                        if (profile == "cycle") {
+                            let x0 = linrange(0, 15*24*60)
+                            let y0 = x0.map(function(tick) {
+                                let x = tick/60.0/24.0*3
+                                return (Math.tanh((x - Math.floor(x) - 0.5)*SMOOTHING_FACTOR))/
+                                    (2*Math.tanh(0.5*SMOOTHING_FACTOR)) + Math.floor(x) + 1.5 - x
+                            })
+
+                            data.push({
+                                "*": "path",
+                                "y": y0.map(e => 0.5*(e - 1) - offset - i),
+                                "x": x0.map(e => e/60.0/24.0),
+                                "stroke": ref_color
+                            })
+                        } else if (profile == "pulse") {
+                            let times = [0, 2, 4, 6, 8, 10, 12, 14]
+                            times.map(function(t) {
+                                data.push({
+                                    "*": "rect",
+                                    "y": [-offset + 0.2 - i],
+                                    "x": [t - 0.1],
+                                    "width": [0.2],
+                                    "height": [0.4],
+                                    "fill": ref_color
+                                })
+                            })
+                        } else if (profile == "constant") {
+                            data.push({
+                                "*": "path",
+                                "y": [-offset - i, -offset - i],
+                                "x": [0, 15],
+                                "stroke": ref_color,
+                                "width": 2
+                            })
+                        }
                     }
 
                     levels.map(function(level, iLevel) {
@@ -169,15 +188,7 @@
 
                         data.push({
                             "*": "path",
-                            "y": [-offset - iLevel - 1, -offset -iLevel - 1],
-                            "x": [0, 15],
-                            "stroke": grid_color,
-                            "width": 0.5
-                        })
-
-                        data.push({
-                            "*": "path",
-                            "y": y.map(e => e - iLevel - offset - 2),
+                            "y": y.map(e => e - iLevel - offset - 1),
                             "x": x,
                             "stroke": "#000",
                             "width": 1
@@ -211,30 +222,29 @@
                 addLabels(G, labels)
 
                 // Add profile labels
-                let profiles = [ [0, "constant"], [4, "pulse"], [8, "cycle"] ]
+                let profiles = [ [1, "constant"], [4, "pulse"], [7, "cycle"] ]
                 G.append("g").selectAll("text")
                     .data(profiles).enter().append("text")
                     .html(d => d[1])
                     .attr("font-size", FONT_SIZE + "pt")
                     .attr("font-family", "Helvetica")
                     .attr("font-weight", "bold")
-                    .attr("text-anchor", "end")
-                    .attr("x", 0)
-                    .attr("y", d => S.yscale(-d[0]) + FONT_SIZE/2)
+                    .attr("text-anchor", "middle")
+                    .attr("transform", d => "rotate(-90,-35," + (S.yscale(-d[0])) + ")")
+                    .attr("x", -35)
+                    .attr("y", d => S.yscale(-d[0]))
 
                 // Add level labels
-                let levels = [ [1, "low"], [2, "basal"], [3, "high"] ]
+                let levels = [ [0, "low"], [1, "basal"], [2, "high"] ]
                 for (i = 0; i < levels.length; i++) {
                 G.append("g").selectAll("text")
                     .data(levels).enter().append("text")
                     .html(d => d[1])
                     .attr("font-size", (FONT_SIZE - 2) + "pt")
                     .attr("font-family", "Helvetica")
-                    .attr("font-style", "italic")
                     .attr("text-anchor", "end")
-                    .attr("fill", "#777")
                     .attr("x", 0)
-                    .attr("y", d => S.yscale(-profiles[i][0] - d[0]) + (FONT_SIZE - 2)/2)
+                    .attr("y", d => S.yscale(-profiles[i][0] - d[0] + 1) + (FONT_SIZE - 2)/2)
                 }
             }
         </script>
