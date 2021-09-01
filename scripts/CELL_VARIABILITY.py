@@ -1,8 +1,8 @@
 from .utilities import load, load_tar
 import tarfile
 
-class CELL_STOCHASTICITY():
-    NAME = "CELL_STOCHASTICITY"
+class CELL_VARIABILITY():
+    NAME = "CELL_VARIABILITY"
 
     CONTEXTS = [
         ('C', '', []),

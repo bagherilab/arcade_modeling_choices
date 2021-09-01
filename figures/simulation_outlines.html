@@ -18,7 +18,7 @@
             <div id="simulations">
                 <strong>SIMULATION SET</strong>
                 <label class="inputs"><input type="radio" name="simulation" id="simulation_SYSTEM_REPRESENTATION">SYSTEM REPRESENTATION</label>
-                <label class="inputs"><input type="radio" name="simulation" id="simulation_CELL_STOCHASTICITY">CELL STOCHASTICITY</label>
+                <label class="inputs"><input type="radio" name="simulation" id="simulation_CELL_VARIABILITY">CELL VARIABILITY</label>
                 <label class="inputs"><input type="radio" name="simulation" id="simulation_NUTRIENT_DYNAMICS">NUTRIENT DYNAMICS</label>
             </div>
         </div>
@@ -46,12 +46,12 @@
                     "3D": "3D",
                 },
                 "age": {
-                    "A0": "deterministic",
-                    "A1": "stochastic",
+                    "A0": "homogeneous",
+                    "A1": "heterogeneous",
                 },
                 "volume": {
-                    "V0": "deterministic",
-                    "V1": "stochastic",
+                    "V0": "homogeneous",
+                    "V1": "heterogeneous",
                 },
                 "profile": {
                     "constant": "constant",
@@ -75,7 +75,7 @@
                         "dimension": ["2D", "3D"],
                     }
                 },
-                "CELL_STOCHASTICITY": {
+                "CELL_VARIABILITY": {
                     "layout": ["context", "age", "volume"],
                     "order": [0, 1, 2],
                     "selected": {

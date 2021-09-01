@@ -37,12 +37,12 @@
                     "CH": "tissue",
                 },
                 "age": {
-                    "A0": "deterministic",
-                    "A1": "stochastic",
+                    "A0": "homogeneous",
+                    "A1": "heterogeneous",
                 },
                 "volume": {
-                    "V0": "deterministic",
-                    "V1": "stochastic",
+                    "V0": "homogeneous",
+                    "V1": "heterogeneous",
                 },
             }
 
@@ -73,7 +73,7 @@
                 }
 
                 let name = function(arr) {
-                    return "CELL_STOCHASTICITY/CELL_STOCHASTICITY.QUANTILES.json"
+                    return "CELL_VARIABILITY/CELL_VARIABILITY.QUANTILES.json"
                 }
 
                 let layout = [SELECTED.radios.layout, "context"]
