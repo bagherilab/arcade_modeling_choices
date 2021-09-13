@@ -3,7 +3,7 @@ function saveAs(filename) {
     filename = filename[filename.length - 1]
     let svg = document.getElementById("download")
     let serializer = new XMLSerializer()
-    let source = serializer.serializeToString(svg)
+    let source = serializer.serializeToString(svg).replaceAll("><", ">\n<")
     let svgBlob = new Blob([source], {type:"image/svg+xml;charset=utf-8"})
     let downloadLink = document.createElement("a")
     downloadLink.href = URL.createObjectURL(svgBlob)

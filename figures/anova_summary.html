@@ -31,7 +31,7 @@
         <div id="canvas"></div>
         <script>
             var PREFIX = "anova_testing"
-            var SIZE = { "width": 400, "height": 400 }
+            var SIZE = { "width": 309, "height": 293 }
             var OPTIONS = [ "simulations", "metrics" ]
             var SELECTED = {
                 "radios": {
@@ -53,36 +53,36 @@
                     "CH": "tissue",
                 },
                 "geometry": {
-                    "rect": "rectangular",
-                    "hex": "hexagonal",
+                    "rect": "rect.",
+                    "hex": "hex.",
                 },
                 "dimension": {
                     "2D": "2D",
-                    "3DC": "3D*",
+                    "3DC": "3DC",
                     "3D": "3D",
                 },
                 "age": {
-                    "A0": "homogeneous",
-                    "A1": "heterogeneous",
+                    "A0": "A0",
+                    "A1": "A1",
                 },
                 "volume": {
-                    "V0": "homogeneous",
-                    "V1": "heterogeneous",
+                    "V0": "V0",
+                    "V1": "V1",
                 },
                 "profile": {
-                    "constant": "constant",
+                    "constant": "const.",
                     "pulse": "pulse",
                     "cycle": "cycle",
                 },
                 "level": {
-                    "LOW": "LOW",
-                    "BASAL": "BASAL",
-                    "HIGH": "HIGH",
+                    "LOW": "low",
+                    "BASAL": "basal",
+                    "HIGH": "high",
                 },
             }
 
             var FACTORS = {
-                "SYSTEM_REPRESENTATION": ["dimension", "geometry"],
+                "SYSTEM_REPRESENTATION": ["geometry", "dimension"],
                 "CELL_VARIABILITY": ["volume", "age"],
                 "NUTRIENT_DYNAMICS": ["profile", "level"],
             }
@@ -92,7 +92,7 @@
                 "dimension": ["2D", "3DC", "3D"],
                 "age": ["A0", "A1"],
                 "volume": ["V0", "V1"],
-                "profile": ["constant", "cycle"],
+                "profile": ["constant", "pulse", "cycle"],
                 "level": ["LOW", "BASAL", "HIGH"],
             }
 
@@ -191,97 +191,7 @@
                 let positions = S.selected[index]
                 let style = FACTORS[S.selected.simulation]["ba".indexOf(index)]
 
-                let widths = {
-                    "dimension": {
-                        "2D": 1.5,
-                        "3D": 1.5,
-                        "3DC": 1
-                    },
-                    "geometry": {
-                        "rect": 1,
-                        "hex": 1,
-                    },
-                    "age": {
-                        "A0": 0.5,
-                        "A1": 1,
-                    },
-                    "volume": {
-                        "V0": 0.5,
-                        "V1": 1,
-                    },
-                    "profile": {
-                        "constant": 0.5,
-                        "pulse": 1,
-                        "cycle": 1,
-                    },
-                    "level": {
-                        "LOW": 1,
-                        "BASAL": 1,
-                        "HIGH": 1,
-                    }
-                }
-
-                let strokes = {
-                    "dimension": {
-                        "2D": "#555",
-                        "3D": "#555",
-                        "3DC": "#555",
-                    },
-                    "geometry": {
-                        "rect": "#555",
-                        "hex": "#222",
-                    },
-                    "age": {
-                        "A0": "#555",
-                        "A1": "#222",
-                    },
-                    "volume": {
-                        "V0": "#555",
-                        "V1": "#222",
-                    },
-                    "profile": {
-                        "constant": "#888",
-                        "pulse": "#555",
-                        "cycle": "#222",
-                    },
-                    "level": {
-                        "LOW": "#888",
-                        "BASAL": "#555",
-                        "HIGH": "#222",
-                    },
-                }
-
-                let dashes = {
-                    "dimension": {
-                        "2D": "2,2",
-                        "3D": null,
-                        "3DC": null
-                    },
-                    "geometry": {
-                        "rect": null,
-                        "hex": null,
-                    },
-                    "age": {
-                        "A0": null,
-                        "A1": "2,2",
-                    },
-                    "volume": {
-                        "V0": null,
-                        "V1": "2,2",
-                    },
-                    "profile": {
-                        "constant": null,
-                        "pulse": "3,1",
-                        "cycle": "2,2",
-                    },
-                    "level": {
-                        "LOW": null,
-                        "BASAL": null,
-                        "HIGH": null,
-                    },
-                }
-
-                levels.map(function(level) {
+                levels.map(function(level, j) {
                     let df = d
                         .filter(e => e["factor_" + group] == level)
                         .filter(e => contains(e["factor_" + index], positions))
@@ -299,7 +209,7 @@
                             "xscale": group,
                             "x": [i, i],
                             "y": [y[i] - e[2], y[i] + e[2]],
-                            "stroke": strokes[style][level],
+                            "stroke": STYLES[style][level][0],
                             "width": 0.5
                         })
                     })
@@ -309,8 +219,8 @@
                         "xscale": group,
                         "x": x,
                         "y": y,
-                        "r": 2,
-                        "fill": strokes[style][level],
+                        "r": 1.5,
+                        "fill": STYLES[style][level][0],
                     })
 
                     data.push({
@@ -318,9 +228,9 @@
                         "xscale": group,
                         "x": x,
                         "y": y,
-                        "stroke": strokes[style][level],
-                        "width": widths[style][level],
-                        "dash": dashes[style][level],
+                        "stroke": STYLES[style][level][0],
+                        "width": STYLES[style][level][1],
+                        "dash": STYLES[style][level][2],
                     })
                 })
 
@@ -334,6 +244,20 @@
 
             function DECORATOR(g, S, i, p) {
                 addBorder(g, S.subpanel.w, S.subpanel.h, "#ccc")
+
+                if (i.reduce((a, b) => a + b) == 0) {
+                    S.G.append("defs")
+                        .append("pattern")
+                            .attr("id", "shaded")
+                            .attr("width", 2)
+                            .attr("height", 2)
+                            .attr("patternTransform", "rotate(45)")
+                            .attr("patternUnits", "userSpaceOnUse")
+                            .append("rect")
+                                .attr("width", 0.5)
+                                .attr("height", 2)
+                                .attr("fill", "#ddd")
+                }
 
                 // Create and align groups for ticks.
                 let dx = alignHorzAxis(S, i)
@@ -361,9 +285,13 @@
 
                 // ANOVA result indicators.
                 if (i[0] == 0) {
-                    let gg = S.G
+                    let gg1 = S.G
                         .insert("g",":first-child")
                         .attr("transform", "translate(" + dx + "," + dy + ")")
+
+                    let gg2 = S.G
+                        .insert("g",":first-child")
+                        .attr("transform", "translate(" + (dx + S.panel.dw) + "," + dy + ")")
 
                     let anova = p.anova
                     let interaction = anova["anova_int"]["is_significant"]["X1:X2"]
@@ -371,43 +299,43 @@
                     if (interaction) {
                         let simple = anova["simple_main"]
 
-                        gg.append("rect")
-                            .attr("x", S.subpanel.w + 5)
-                            .attr("width", 10)
+                        gg1.append("rect")
+                            .attr("x", S.subpanel.w + 3)
+                            .attr("width", 4)
                             .attr("height", S.subpanel.h)
-                            .attr("fill", "#999")
+                            .attr("fill", "#ccc")
 
                         S.selected.b.map(function(b, i) {
-                            gg.append("rect")
+                            gg1.append("rect")
                                 .attr("x", S.xscale["a"](i) - 5)
                                 .attr("width", 10)
                                 .attr("height", S.subpanel.h)
-                                .attr("fill", (simple["X1"]["is_significant"][b] ? "#ddd" : "none"))
+                                .attr("fill", (simple["X1"]["is_significant"][b] ? "url(#shaded)" : "none"))
                         })
 
                         S.selected.a.map(function(a, i) {
-                            gg.append("rect")
-                                .attr("x", S.panel.dw + S.xscale["b"](i) - 5)
+                            gg2.append("rect")
+                                .attr("x", S.xscale["b"](i) - 5)
                                 .attr("width", 10)
                                 .attr("height", S.subpanel.h)
-                                .attr("fill", (simple["X2"]["is_significant"][a] ? "#ddd" : "none"))
+                                .attr("fill", (simple["X2"]["is_significant"][a] ? "url(#shaded)" : "none"))
                         })
                     } else {
                         let noint = anova["anova_noint"]
 
-                        gg.append("rect")
+                        gg1.append("rect")
                             .attr("y", 5)
                             .attr("x", 5)
                             .attr("width", S.subpanel.w - 10)
-                            .attr("height", 10)
-                            .attr("fill", (noint["is_significant"]["X1"] ? "#555" : "none"))
+                            .attr("height", 4)
+                            .attr("fill", (noint["is_significant"]["X1"] ? "#999" : "none"))
 
-                        gg.append("rect")
+                        gg2.append("rect")
                             .attr("y", 5)
-                            .attr("x", S.panel.dw + 5)
+                            .attr("x", 5)
                             .attr("width", S.subpanel.w - 10)
-                            .attr("height", 10)
-                            .attr("fill", (noint["is_significant"]["X2"] ? "#555" : "none"))
+                            .attr("height", 4)
+                            .attr("fill", (noint["is_significant"]["X2"] ? "#999" : "none"))
                     }
                 }
             }

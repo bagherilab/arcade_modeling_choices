@@ -177,6 +177,7 @@ function plotCircle(g, S) {
                     "fill": (d.fill ? (Array.isArray(d.fill) ? d.fill[i] : d.fill) : "#555"),
                     "stroke": (d.stroke ? (Array.isArray(d.stroke) ? d.stroke[i] : d.stroke) : null),
                     "opacity": (d.opacity ? (Array.isArray(d.opacity) ? d.opacity[i] : d.opacity) : null),
+                    "width": (d.width ? (Array.isArray(d.width) ? d.width[i] : d.width) : null),
                 }
             })
         })
@@ -187,6 +188,7 @@ function plotCircle(g, S) {
             .attr("fill", d => d.fill)
             .attr("stroke", d => d.stroke)
             .attr("opacity", d => d.opacity)
+            .attr("stroke-width", d => d.width)
 }
 
 function plotRect(g, S) {

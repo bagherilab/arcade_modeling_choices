@@ -43,6 +43,36 @@ var COLORS = {
     "states": ["#dddddd", "#f00", "#bbbbbb", "#111111", "#666666", "#f00", "#f00"],
 }
 
+var STYLES = {
+    "dimension": {
+        "2D": ["#edbb8a", 1.5, "2,2"],
+        "3DC": ["#de8a5a", 1, null],
+        "3D": ["#ca562c", 1.5, null],
+    },
+    "geometry": {
+        "rect": ["#92B69E", 1, null],
+        "hex": ["#008080", 1, "2,2"],
+    },
+    "age": {
+        "A0": ["#E6A372", 1.5, null],
+        "A1": ["#ca562c", 1, "2,2"],
+    },
+    "volume": {
+        "V0": ["#92B69E", 1.5, null],
+        "V1": ["#008080", 1, "2,2"],
+    },
+    "profile": {
+        "constant": ["#b4c8a8", 1.5, null],
+        "pulse": ["#70a494", 1, "3,3"],
+        "cycle": ["#008080", 1, "2,1"],
+    },
+    "level": {
+        "LOW": ["#edbb8a", 0.5, null],
+        "BASAL": ["#de8a5a", 1, null],
+        "HIGH": ["#ca562c", 1.5, null],
+    },
+}
+
 // GENERAL BEHAVIOR ============================================================
 
 function initialize(id, plot) {
