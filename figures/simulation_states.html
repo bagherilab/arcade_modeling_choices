@@ -33,6 +33,7 @@
                 }
             }
             var LABELS = {
+                "x": { "": "" },
                 "context": {
                     "C": "colony",
                     "CHX": "tissue",
@@ -46,12 +47,12 @@
                     "3D": "3D",
                 },
                 "age": {
-                    "A0": "homogeneous",
-                    "A1": "heterogeneous",
+                    "A0": "A0",
+                    "A1": "A1",
                 },
                 "volume": {
-                    "V0": "homogeneous",
-                    "V1": "heterogeneous",
+                    "V0": "V0",
+                    "V1": "V1",
                 },
                 "profile": {
                     "constant": "constant",
@@ -67,30 +68,33 @@
 
             var SIMULATIONS = {
                 "SYSTEM_REPRESENTATION": {
-                    "layout": ["context", "dimension", "geometry"],
-                    "order": [0, 1, 2],
+                    "layout": ["x", "geometry", "dimension", "context"],
+                    "order": [3, 2, 1, 0],
                     "selected": {
                         "context": ["C", "CHX"],
                         "geometry": ["rect", "hex"],
                         "dimension": ["2D", "3D"],
+                        "x": [""],
                     }
                 },
                 "CELL_VARIABILITY": {
-                    "layout": ["context", "age", "volume"],
-                    "order": [0, 1, 2],
+                    "layout": ["x", "volume", "age", "context"],
+                    "order": [3, 2, 1, 0],
                     "selected": {
                         "context": ["C", "CHX"],
                         "age": ["A0", "A1"],
                         "volume": ["V0", "V1"],
+                        "x": [""],
                     }
                 },
                 "NUTRIENT_DYNAMICS": {
-                    "layout": ["context", "profile", "level"],
-                    "order": [0, 2, 1],
+                    "layout": ["x", "profile", "level", "context"],
+                    "order": [3, 2, 1, 0],
                     "selected": {
                         "context": ["C", "CHX"],
                         "profile": ["constant", "pulse", "cycle"],
                         "level": ["LOW", "BASAL", "HIGH"],
+                        "x": [""],
                     }
                 },
             }
@@ -124,8 +128,8 @@
                     "cols": p.nCols,
                     "rows": p.nRows,
                     "axis": {
-                        "x": { "bounds": [0, 14] },
-                        "y": { "bounds": [0, 14] },
+                        "x": { "bounds": [0, 13] },
+                        "y": { "bounds": [0, 13] },
                     }
                 }
             }
