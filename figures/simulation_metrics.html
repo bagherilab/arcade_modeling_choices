@@ -28,7 +28,7 @@
                 <label class="inputs"><input type="radio" name="condition" id="condition_geometry">GEOMETRY</label>
                 <label class="inputs"><input type="radio" name="condition" id="condition_dimension">DIMENSION</label>
                 <br />
-                <em>CELL STOCASTICITY</em>:
+                <em>CELL VARIABILITY</em>:
                 <label class="inputs"><input type="radio" name="condition" id="condition_age">AGE</label>
                 <label class="inputs"><input type="radio" name="condition" id="condition_volume">VOLUME</label>
                 <br />
@@ -64,12 +64,12 @@
                     "3D": "3D",
                 },
                 "age": {
-                    "A0": "homogeneous",
-                    "A1": "heterogeneous",
+                    "A0": "A0",
+                    "A1": "A1",
                 },
                 "volume": {
-                    "V0": "homogeneous",
-                    "V1": "heterogeneous",
+                    "V0": "V0",
+                    "V1": "V1",
                 },
                 "profile": {
                     "constant": "constant",
@@ -139,11 +139,11 @@
                     "layout": layout,
                     "files": p.files,
                     "margin": {
-                        "left": p.marginLeft,
+                        "left": p.marginLeft + LABEL_SIZE + 5 + 2*FONT_PADDING + (FONT_SIZE - 2)*2,
                         "top": p.marginTop,
                         "right": 5,
-                        "bottom": 5,
-                        "axis": AXIS_PADDING
+                        "bottom": LABEL_SIZE + 5 + 2*FONT_PADDING + FONT_SIZE - 2,
+                        "axis": AXIS_EMPTY
                     },
                     "cols": p.nCols,
                     "rows": p.nRows,
@@ -179,96 +179,6 @@
 
                 let style = styling[layout]
 
-                let widths = {
-                    "dimension": {
-                        "2D": 1.5,
-                        "3D": 1.5,
-                        "3DC": 1
-                    },
-                    "geometry": {
-                        "rect": 1,
-                        "hex": 1,
-                    },
-                    "age": {
-                        "A0": 0.5,
-                        "A1": 1,
-                    },
-                    "volume": {
-                        "V0": 0.5,
-                        "V1": 1,
-                    },
-                    "profile": {
-                        "constant": 0.5,
-                        "pulse": 1,
-                        "cycle": 1,
-                    },
-                    "level": {
-                        "LOW": 1,
-                        "BASAL": 1,
-                        "HIGH": 1,
-                    }
-                }
-
-                let dashes = {
-                    "dimension": {
-                        "2D": "2,2",
-                        "3D": null,
-                        "3DC": null
-                    },
-                    "geometry": {
-                        "rect": null,
-                        "hex": null,
-                    },
-                    "age": {
-                        "A0": null,
-                        "A1": "2,2",
-                    },
-                    "volume": {
-                        "V0": null,
-                        "V1": "2,2",
-                    },
-                    "profile": {
-                        "constant": null,
-                        "pulse": "3,1",
-                        "cycle": "2,2",
-                    },
-                    "level": {
-                        "LOW": null,
-                        "BASAL": null,
-                        "HIGH": null,
-                    },
-                }
-
-                let strokes = {
-                    "dimension": {
-                        "2D": "#555",
-                        "3D": "#555",
-                        "3DC": "#555",
-                    },
-                    "geometry": {
-                        "rect": "#555",
-                        "hex": "#222",
-                    },
-                    "age": {
-                        "A0": "#555",
-                        "A1": "#222",
-                    },
-                    "volume": {
-                        "V0": "#555",
-                        "V1": "#222",
-                    },
-                    "profile": {
-                        "constant": "#888",
-                        "pulse": "#555",
-                        "cycle": "#222",
-                    },
-                    "level": {
-                        "LOW": "#888",
-                        "BASAL": "#555",
-                        "HIGH": "#222",
-                    },
-                }
-
                 d.map(function(e) {
                     let y = e['_Y'].map(e => Number(e)*yaxis.scale)
                     let remove = findNaNs(y)
@@ -283,9 +193,9 @@
                         "yscale": metric,
                         "x": x,
                         "y": y,
-                        "width": widths[style][e[style]],
-                        "dash": dashes[style][e[style]],
-                        "stroke": strokes[style][e[style]],
+                        "stroke": STYLES[style][e[style]][0],
+                        "width": STYLES[style][e[style]][1],
+                        "dash": STYLES[style][e[style]][2],
                     })
                 })
 
@@ -299,7 +209,7 @@
                 }
             }
 
-            function LABELLER(S, P) { return labelGrid(S, P) }
+            function LABELLER(S, P) { return labelOne(S, P) }
 
             function DECORATOR(g, S, i, p) {
                 addBorder(g, S.subpanel.w, S.subpanel.h, "#ccc")
@@ -318,31 +228,35 @@
                 // Create axis ticks and labels.
                 let ticks = []
                 let labels = []
-                ticks.push(makeHorzTicks(S, 0, S.subpanel.h, A.x))
+                if (i[1] == 2) { ticks.push(makeHorzTicks(S, 0, S.subpanel.h, A.x)) }
 
                 if (p.x == 0) {
                     let metric = S.selected.metric[i[1]]
-                    ticks.push(makeVertTicks(S, 0, 0, A.y(metric), S.yscale[metric]))
-                    labels.push(makeVertLabel(S.subpanel.h, alignVertText(S), 0, A.y(metric).title, "none"))
-                    labels.push(makeHorzLabel(S.subpanel.w*2, 0, alignHorzText(S), A.x.title, "none"))
+                    if (i[0] == 0) { ticks.push(makeVertTicks(S, 0, 0, A.y(metric), S.yscale[metric])) }
+                    if (i[0] == 0) { labels.push(makeVertLabel(S.subpanel.h, alignVertText(S), 0, A.y(metric).title, "none")) }
+                    if (i[1] == 2) { labels.push(makeHorzLabel(S.subpanel.w*2, 0, alignHorzText(S), A.x.title, "none")) }
 
-                    G.append("text")
-                        .text("colony")
-                        .attr("font-size", (FONT_SIZE - 2) + "pt")
-                        .attr("font-family", "Helvetica")
-                        .attr("text-anchor", "middle")
-                        .attr("font-style", "italic")
-                        .attr("x", S.subpanel.w/2)
-                        .attr("y", FONT_SIZE + 2)
+                    if (i[1] == 0) {
+                        G.append("text")
+                            .text("colony")
+                            .attr("font-size", (FONT_SIZE - 2) + "pt")
+                            .attr("font-family", "Helvetica")
+                            .attr("text-anchor", "middle")
+                            .attr("font-style", "italic")
+                            .attr("x", S.subpanel.w/2)
+                            .attr("y", FONT_SIZE + 2)
+                    }
                 } else {
-                    G.append("text")
-                        .text("tissue")
-                        .attr("font-size", (FONT_SIZE - 2) + "pt")
-                        .attr("font-family", "Helvetica")
-                        .attr("text-anchor", "middle")
-                        .attr("font-style", "italic")
-                        .attr("x", S.subpanel.w/2)
-                        .attr("y", FONT_SIZE + 2)
+                    if (i[1] == 0) {
+                        G.append("text")
+                            .text("tissue")
+                            .attr("font-size", (FONT_SIZE - 2) + "pt")
+                            .attr("font-family", "Helvetica")
+                            .attr("text-anchor", "middle")
+                            .attr("font-style", "italic")
+                            .attr("x", S.subpanel.w/2)
+                            .attr("y", FONT_SIZE + 2)
+                    }
                 }
 
                 addTicks(G, ticks)
