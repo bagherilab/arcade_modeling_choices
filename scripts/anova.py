@@ -84,7 +84,7 @@ def calculate_skewness(df):
 
     return coeff*numerator/denominator/se
 
-def test_skewness(df, alpha=0.05):
+def test_skewness(df, alpha=0.01):
     """Test for normality using standardized skewness."""
     # Get data subsets
     subsets = get_subsets(df)
@@ -110,7 +110,7 @@ def test_skewness(df, alpha=0.05):
     table = pd.DataFrame(results, columns=columns)
     return table
 
-def test_shapiro(df, alpha=0.05):
+def test_shapiro(df, alpha=0.01):
     """Test for normality using Shapiro-Wilks."""
 
     # Get data subsets
@@ -135,7 +135,7 @@ def test_shapiro(df, alpha=0.05):
     table = pd.DataFrame(results, columns=columns)
     return table
 
-def test_levene(df, alpha=0.05):
+def test_levene(df, alpha=0.01):
     """Test for homogeneity of variance using Levene's."""
 
     # Get data subsets
@@ -214,7 +214,7 @@ def calculate_effect_means(df):
 
 # ANOVA ========================================================================
 
-def run_two_way_anova_with_interaction(df, alpha=0.05):
+def run_two_way_anova_with_interaction(df, alpha=0.01):
     """Run two-way ANOVA with interaction."""
 
     # Get data levels
@@ -268,7 +268,7 @@ def run_two_way_anova_with_interaction(df, alpha=0.05):
 
     return table
 
-def run_two_way_anova_without_interaction(df, alpha=0.05):
+def run_two_way_anova_without_interaction(df, alpha=0.01):
     """Run two-way ANOVA without interaction."""
 
     # Get data levels
@@ -321,7 +321,7 @@ def run_two_way_anova_without_interaction(df, alpha=0.05):
 
     return table
 
-def run_simple_main_effects(df, factor, alpha=0.05):
+def run_simple_main_effects(df, factor, alpha=0.01):
     """Run simple main effects testing."""
 
     # Get data levels
@@ -380,7 +380,7 @@ def run_simple_main_effects(df, factor, alpha=0.05):
 
     return table
 
-def run_tukey_tests(df, factor, interaction, alpha=0.05):
+def run_tukey_tests(df, factor, interaction, alpha=0.01):
     """Run pairwise Tukey tests."""
 
     # Get data levels
@@ -410,14 +410,14 @@ def run_tukey_tests(df, factor, interaction, alpha=0.05):
             df_subset = df[df[factor_subset] == subset]
 
             # Get results
-            results_summary = pairwise_tukeyhsd(df_subset.Y, df_subset[factor]).summary()
+            results_summary = pairwise_tukeyhsd(df_subset.Y, df_subset[factor], alpha=alpha).summary()
             results_as_csv = results_summary.as_csv().replace(" ", "").split("\n")[2:]
             [results.append([subset] + row.split(",")) for row in results_as_csv]
 
         df = pd.DataFrame(results, columns=columns)
     else:
         columns = ['group1', 'group2', 'meandiff', 'p-adj', 'lower', 'upper', 'is_significant']
-        results_summary = pairwise_tukeyhsd(df.Y, df[factor]).summary()
+        results_summary = pairwise_tukeyhsd(df.Y, df[factor], alpha=alpha).summary()
         results_as_csv = results_summary.as_csv().replace(" ", "").split("\n")[2:]
         results = [row.split(",") for row in results_as_csv]
         df = pd.DataFrame(results, columns=columns)
