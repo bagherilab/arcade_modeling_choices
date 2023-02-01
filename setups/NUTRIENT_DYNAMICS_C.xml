@@ -1,0 +1,269 @@
+<set prefix="NUTRIENT_DYNAMICS_" path="/path/for/outputs/">
+    <series name="C_LOW_constant" start="0" end="50" days="15">
+        <simulation type="growth">
+            <profilers>
+                <profiler type="growth" interval="180" suffix="" />
+            </profilers>
+        </simulation>
+        <agents initialization="0">
+            <populations>
+                <population type="C" fraction="0.0">
+                    <variables>
+                        <variable id="max_height" scale="1.5" />
+                        <variable id="meta_pref" scale="1.5" />
+                        <variable id="migra_threshold" scale="0.5" />
+                    </variables>
+                </population>
+            </populations>
+            <helpers>
+                <helper type="insert" delay="1440" populations="0" bounds="0.05"/>
+            </helpers>
+        </agents>
+        <environment coordinate="hex">
+            <globals>
+                <global id="CONCENTRATION_GLUCOSE" SCALE_NAME="LOW" scale="0.5" />
+            </globals>
+            <components>
+                <component type="sites" class="source" />
+            </components>
+        </environment>
+    </series>
+    <series name="C_LOW_pulse" start="0" end="50" days="15">
+        <simulation type="growth">
+            <profilers>
+                <profiler type="growth" interval="180" suffix="" />
+            </profilers>
+        </simulation>
+        <agents initialization="0">
+            <populations>
+                <population type="C" fraction="0.0">
+                    <variables>
+                        <variable id="max_height" scale="1.5" />
+                        <variable id="meta_pref" scale="1.5" />
+                        <variable id="migra_threshold" scale="0.5" />
+                    </variables>
+                </population>
+            </populations>
+            <helpers>
+                <helper type="insert" delay="1440" populations="0" bounds="0.05"/>
+            </helpers>
+        </agents>
+        <environment coordinate="hex">
+            <globals>
+                <global id="CONCENTRATION_GLUCOSE" SCALE_NAME="LOW" scale="0.5" />
+            </globals>
+            <components>
+                <component type="sites" class="source" />
+                <component type="pulse" />
+            </components>
+        </environment>
+    </series>
+    <series name="C_LOW_cycle" start="0" end="50" days="15">
+        <simulation type="growth">
+            <profilers>
+                <profiler type="growth" interval="180" suffix="" />
+            </profilers>
+        </simulation>
+        <agents initialization="0">
+            <populations>
+                <population type="C" fraction="0.0">
+                    <variables>
+                        <variable id="max_height" scale="1.5" />
+                        <variable id="meta_pref" scale="1.5" />
+                        <variable id="migra_threshold" scale="0.5" />
+                    </variables>
+                </population>
+            </populations>
+            <helpers>
+                <helper type="insert" delay="1440" populations="0" bounds="0.05"/>
+            </helpers>
+        </agents>
+        <environment coordinate="hex">
+            <globals>
+                <global id="CONCENTRATION_GLUCOSE" SCALE_NAME="LOW" scale="0.5" />
+            </globals>
+            <components>
+                <component type="sites" class="source" />
+                <component type="cycle" />
+            </components>
+        </environment>
+    </series>
+    <series name="C_BASAL_constant" start="0" end="50" days="15">
+        <simulation type="growth">
+            <profilers>
+                <profiler type="growth" interval="180" suffix="" />
+            </profilers>
+        </simulation>
+        <agents initialization="0">
+            <populations>
+                <population type="C" fraction="0.0">
+                    <variables>
+                        <variable id="max_height" scale="1.5" />
+                        <variable id="meta_pref" scale="1.5" />
+                        <variable id="migra_threshold" scale="0.5" />
+                    </variables>
+                </population>
+            </populations>
+            <helpers>
+                <helper type="insert" delay="1440" populations="0" bounds="0.05"/>
+            </helpers>
+        </agents>
+        <environment coordinate="hex">
+            <globals>
+                <global id="CONCENTRATION_GLUCOSE" SCALE_NAME="BASAL" scale="1.0" />
+            </globals>
+            <components>
+                <component type="sites" class="source" />
+            </components>
+        </environment>
+    </series>
+    <series name="C_BASAL_pulse" start="0" end="50" days="15">
+        <simulation type="growth">
+            <profilers>
+                <profiler type="growth" interval="180" suffix="" />
+            </profilers>
+        </simulation>
+        <agents initialization="0">
+            <populations>
+                <population type="C" fraction="0.0">
+                    <variables>
+                        <variable id="max_height" scale="1.5" />
+                        <variable id="meta_pref" scale="1.5" />
+                        <variable id="migra_threshold" scale="0.5" />
+                    </variables>
+                </population>
+            </populations>
+            <helpers>
+                <helper type="insert" delay="1440" populations="0" bounds="0.05"/>
+            </helpers>
+        </agents>
+        <environment coordinate="hex">
+            <globals>
+                <global id="CONCENTRATION_GLUCOSE" SCALE_NAME="BASAL" scale="1.0" />
+            </globals>
+            <components>
+                <component type="sites" class="source" />
+                <component type="pulse" />
+            </components>
+        </environment>
+    </series>
+    <series name="C_BASAL_cycle" start="0" end="50" days="15">
+        <simulation type="growth">
+            <profilers>
+                <profiler type="growth" interval="180" suffix="" />
+            </profilers>
+        </simulation>
+        <agents initialization="0">
+            <populations>
+                <population type="C" fraction="0.0">
+                    <variables>
+                        <variable id="max_height" scale="1.5" />
+                        <variable id="meta_pref" scale="1.5" />
+                        <variable id="migra_threshold" scale="0.5" />
+                    </variables>
+                </population>
+            </populations>
+            <helpers>
+                <helper type="insert" delay="1440" populations="0" bounds="0.05"/>
+            </helpers>
+        </agents>
+        <environment coordinate="hex">
+            <globals>
+                <global id="CONCENTRATION_GLUCOSE" SCALE_NAME="BASAL" scale="1.0" />
+            </globals>
+            <components>
+                <component type="sites" class="source" />
+                <component type="cycle" />
+            </components>
+        </environment>
+    </series>
+    <series name="C_HIGH_constant" start="0" end="50" days="15">
+        <simulation type="growth">
+            <profilers>
+                <profiler type="growth" interval="180" suffix="" />
+            </profilers>
+        </simulation>
+        <agents initialization="0">
+            <populations>
+                <population type="C" fraction="0.0">
+                    <variables>
+                        <variable id="max_height" scale="1.5" />
+                        <variable id="meta_pref" scale="1.5" />
+                        <variable id="migra_threshold" scale="0.5" />
+                    </variables>
+                </population>
+            </populations>
+            <helpers>
+                <helper type="insert" delay="1440" populations="0" bounds="0.05"/>
+            </helpers>
+        </agents>
+        <environment coordinate="hex">
+            <globals>
+                <global id="CONCENTRATION_GLUCOSE" SCALE_NAME="HIGH" scale="2.0" />
+            </globals>
+            <components>
+                <component type="sites" class="source" />
+            </components>
+        </environment>
+    </series>
+    <series name="C_HIGH_pulse" start="0" end="50" days="15">
+        <simulation type="growth">
+            <profilers>
+                <profiler type="growth" interval="180" suffix="" />
+            </profilers>
+        </simulation>
+        <agents initialization="0">
+            <populations>
+                <population type="C" fraction="0.0">
+                    <variables>
+                        <variable id="max_height" scale="1.5" />
+                        <variable id="meta_pref" scale="1.5" />
+                        <variable id="migra_threshold" scale="0.5" />
+                    </variables>
+                </population>
+            </populations>
+            <helpers>
+                <helper type="insert" delay="1440" populations="0" bounds="0.05"/>
+            </helpers>
+        </agents>
+        <environment coordinate="hex">
+            <globals>
+                <global id="CONCENTRATION_GLUCOSE" SCALE_NAME="HIGH" scale="2.0" />
+            </globals>
+            <components>
+                <component type="sites" class="source" />
+                <component type="pulse" />
+            </components>
+        </environment>
+    </series>
+    <series name="C_HIGH_cycle" start="0" end="50" days="15">
+        <simulation type="growth">
+            <profilers>
+                <profiler type="growth" interval="180" suffix="" />
+            </profilers>
+        </simulation>
+        <agents initialization="0">
+            <populations>
+                <population type="C" fraction="0.0">
+                    <variables>
+                        <variable id="max_height" scale="1.5" />
+                        <variable id="meta_pref" scale="1.5" />
+                        <variable id="migra_threshold" scale="0.5" />
+                    </variables>
+                </population>
+            </populations>
+            <helpers>
+                <helper type="insert" delay="1440" populations="0" bounds="0.05"/>
+            </helpers>
+        </agents>
+        <environment coordinate="hex">
+            <globals>
+                <global id="CONCENTRATION_GLUCOSE" SCALE_NAME="HIGH" scale="2.0" />
+            </globals>
+            <components>
+                <component type="sites" class="source" />
+                <component type="cycle" />
+            </components>
+        </environment>
+    </series>
+</set>

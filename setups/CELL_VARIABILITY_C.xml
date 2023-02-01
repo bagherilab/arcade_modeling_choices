@@ -1,0 +1,118 @@
+<set prefix="CELL_VARIABILITY_" path="/path/for/outputs/">
+    <series name="C_A0_V0" start="0" end="50" days="15">
+        <simulation type="growth">
+            <profilers>
+                <profiler type="growth" interval="180" suffix="" />
+            </profilers>
+        </simulation>
+        <agents initialization="0">
+            <populations>
+                <population type="C" fraction="0.0">
+                    <variables>
+                        <variable id="max_height" scale="1.5" />
+                        <variable id="meta_pref" scale="1.5" />
+                        <variable id="migra_threshold" scale="0.5" />
+                        <variable id="CELL_VOL_RANGE" scale="0.0" />
+                        <variable id="CELL_AGE_MAX" scale="0.0" />
+                    </variables>
+                </population>
+            </populations>
+            <helpers>
+                <helper type="insert" delay="1440" populations="0" bounds="0.05"/>
+            </helpers>
+        </agents>
+        <environment coordinate="hex">
+            <components>
+                <component type="sites" class="source" />
+            </components>
+        </environment>
+    </series>
+
+    <series name="C_A0_V1" start="0" end="50" days="15">
+        <simulation type="growth">
+            <profilers>
+                <profiler type="growth" interval="180" suffix="" />
+            </profilers>
+        </simulation>
+        <agents initialization="0">
+            <populations>
+                <population type="C" fraction="0.0">
+                    <variables>
+                        <variable id="max_height" scale="1.5" />
+                        <variable id="meta_pref" scale="1.5" />
+                        <variable id="migra_threshold" scale="0.5" />
+                        <variable id="CELL_VOL_RANGE" scale="1.0" />
+                        <variable id="CELL_AGE_MAX" scale="0.0" />
+                    </variables>
+                </population>
+            </populations>
+            <helpers>
+                <helper type="insert" delay="1440" populations="0" bounds="0.05"/>
+            </helpers>
+        </agents>
+        <environment coordinate="hex">
+            <components>
+                <component type="sites" class="source" />
+            </components>
+        </environment>
+    </series>
+
+    <series name="C_A1_V0" start="0" end="50" days="15">
+        <simulation type="growth">
+            <profilers>
+                <profiler type="growth" interval="180" suffix="" />
+            </profilers>
+        </simulation>
+        <agents initialization="0">
+            <populations>
+                <population type="C" fraction="0.0">
+                    <variables>
+                        <variable id="max_height" scale="1.5" />
+                        <variable id="meta_pref" scale="1.5" />
+                        <variable id="migra_threshold" scale="0.5" />
+                        <variable id="CELL_VOL_RANGE" scale="0.0" />
+                        <variable id="CELL_AGE_MAX" scale="1.0" />
+                    </variables>
+                </population>
+            </populations>
+            <helpers>
+                <helper type="insert" delay="1440" populations="0" bounds="0.05"/>
+            </helpers>
+        </agents>
+        <environment coordinate="hex">
+            <components>
+                <component type="sites" class="source" />
+            </components>
+        </environment>
+    </series>
+
+    <series name="C_A1_V1" start="0" end="50" days="15">
+        <simulation type="growth">
+            <profilers>
+                <profiler type="growth" interval="180" suffix="" />
+            </profilers>
+        </simulation>
+        <agents initialization="0">
+            <populations>
+                <population type="C" fraction="0.0">
+                    <variables>
+                        <variable id="max_height" scale="1.5" />
+                        <variable id="meta_pref" scale="1.5" />
+                        <variable id="migra_threshold" scale="0.5" />
+                        <variable id="CELL_VOL_RANGE" scale="1.0" />
+                        <variable id="CELL_AGE_MAX" scale="1.0" />
+                    </variables>
+                </population>
+            </populations>
+            <helpers>
+                <helper type="insert" delay="1440" populations="0" bounds="0.05"/>
+            </helpers>
+        </agents>
+        <environment coordinate="hex">
+            <components>
+                <component type="sites" class="source" />
+            </components>
+        </environment>
+    </series>
+
+</set>
