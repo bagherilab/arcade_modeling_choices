@@ -3,6 +3,8 @@
 The `setups` directory contains all the setup files used for running simulations.
 Simulations were run using **[ARCADE v2.4](https://github.com/bagherilab/ARCADE/releases/tag/v2.4)**.
 
+Note that simulations for `CELL_VARIABILITY` use modified code modifies the cell `toJSON` method to include cell age.
+
 ## Pipeline notebooks
 
 #### Parse simulation outputs
