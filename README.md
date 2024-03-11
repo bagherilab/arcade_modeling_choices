@@ -1,9 +1,21 @@
+Supporting code for the article:
+
+> J Yu and N Bagheri. (2024). Model design choices impact biological insight: Unpacking the broad landscape of spatial-temporal model development decisions. _PLoS Computational Biology_. doi: [10.1371/journal.pcbi.1011917](https://doi.org/10.1371/journal.pcbi.1011917)
+
 ## Setup files
 
 The `setups` directory contains all the setup files used for running simulations.
 Simulations were run using **[ARCADE v2.4](https://github.com/bagherilab/ARCADE/releases/tag/v2.4)**.
 
-Note that simulations for `CELL_VARIABILITY` use modified code modifies the cell `toJSON` method to include cell age.
+Note that simulations for `CELL_VARIABILITY` use modified code that updates the cell `toJSON` method to include cell age.
+
+## Simulation data
+
+Raw simulation data and results are available on Mendeley Data:
+
+- `SYSTEM REPRESENTATION` . [https://doi.org/10.17632/bh5w3tzsjc](https://doi.org/10.17632/bh5w3tzsjc)
+- `CELL VARIABILITY` . [https://doi.org/10.17632/dvrs8zsngb](https://doi.org/10.17632/dvrs8zsngb)
+- `NUTRIENT DYNAMICS` . [https://doi.org/10.17632/96jtpmnrgt](https://doi.org/10.17632/96jtpmnrgt)
 
 ## Pipeline notebooks
 
